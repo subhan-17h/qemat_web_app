@@ -29,7 +29,7 @@ export default function ProductDetailsPage() {
   if (!product) {
     return (
       <div className="mx-auto w-full max-w-screen-xl px-4">
-        <AppBar title="Product Details" showBack />
+        <AppBar title="Product Details" showBack sticky />
         <EmptyState
           icon={<Heart className="text-gray-300" size={48} />}
           title="Product not found"
@@ -71,6 +71,7 @@ export default function ProductDetailsPage() {
       <AppBar
         title="Product Details"
         showBack
+        sticky
         rightAction={
           <button aria-label="Favorite product" onClick={handleToggleFavorite} className="rounded-full p-2 text-gray-700 hover:bg-gray-100">
             <Heart size={20} className={isFavorited(product.productId) ? 'fill-red-600 text-red-600' : ''} />

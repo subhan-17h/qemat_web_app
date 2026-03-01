@@ -21,7 +21,7 @@ export default function StoreProfilePage() {
   if (!store) {
     return (
       <div className="mx-auto w-full max-w-screen-xl px-4">
-        <AppBar title="Store Profile" showBack />
+        <AppBar title="Store Profile" showBack sticky />
         <EmptyState icon={<MapPin className="text-gray-300" size={48} />} title="Store not found" description="Store details are unavailable." />
       </div>
     );
@@ -34,6 +34,7 @@ export default function StoreProfilePage() {
       <AppBar
         title="Store Profile"
         showBack
+        sticky
         rightAction={
           <button
             aria-label="Share store"

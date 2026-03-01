@@ -19,7 +19,7 @@ export default function SignInPage() {
 
   return (
     <div className="mx-auto w-full max-w-md px-4 pb-8">
-      <AppBar title="Sign In" showBack />
+      <AppBar title="Sign In" showBack sticky />
 
       <Card className="mt-5 space-y-3">
         <Input label="Email" type="email" placeholder="you@example.com" value={email} onChange={(event) => setEmail(event.target.value)} />

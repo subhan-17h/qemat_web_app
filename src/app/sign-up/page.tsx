@@ -20,7 +20,7 @@ export default function SignUpPage() {
 
   return (
     <div className="mx-auto w-full max-w-md px-4 pb-8">
-      <AppBar title="Sign Up" showBack />
+      <AppBar title="Sign Up" showBack sticky />
 
       <Card className="mt-5 space-y-3">
         <Input label="Name" placeholder="Your name" value={name} onChange={(event) => setName(event.target.value)} />

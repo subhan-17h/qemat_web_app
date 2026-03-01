@@ -53,7 +53,7 @@ export default function SearchPage() {
 
   return (
     <div className="mx-auto w-full max-w-screen-xl px-4 pb-8 lg:px-8">
-      <AppBar title={categoryTitle ?? (browsing ? 'Browse' : 'Search')} showBack />
+      <AppBar title={categoryTitle ?? (browsing ? 'Browse' : 'Search')} showBack sticky />
 
       <div className="sticky top-3 z-30 space-y-3 bg-white/95 py-3 backdrop-blur">
         <Input

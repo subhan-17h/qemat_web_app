@@ -10,7 +10,7 @@ import { groceryCategories } from '@/lib/mock-data';
 export default function GroceryCategoriesPage() {
   return (
     <div className="mx-auto w-full max-w-screen-xl px-4 pb-8 lg:px-8">
-      <AppBar title="Grocery Foods" showBack />
+      <AppBar title="Grocery Foods" showBack sticky />
 
       <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
         {groceryCategories.map((category) => (

@@ -35,7 +35,7 @@ const sections = [
 export default function AboutPage() {
   return (
     <div className="mx-auto w-full max-w-3xl px-4 pb-8 lg:px-8">
-      <AppBar title="About Qemat" showBack />
+      <AppBar title="About Qemat" showBack sticky />
 
       <div className="mt-4 space-y-3">
         {sections.map((section) => (

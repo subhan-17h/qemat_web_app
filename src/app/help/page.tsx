@@ -35,7 +35,7 @@ export default function HelpPage() {
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 pb-8 lg:px-8">
-      <AppBar title="Help & Support" showBack />
+      <AppBar title="Help & Support" showBack sticky />
 
       <Card className="mt-4 bg-gray-50">
         <h2 className="text-lg font-bold text-gray-900">Need Help?</h2>
