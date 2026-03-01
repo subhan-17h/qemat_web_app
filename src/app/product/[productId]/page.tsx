@@ -135,7 +135,7 @@ export default function ProductDetailsPage() {
         </section>
       ) : null}
 
-      <div className="sticky bottom-16 mt-6 grid grid-cols-2 gap-2 rounded-2xl bg-white/95 p-2 backdrop-blur lg:static lg:bg-transparent lg:p-0">
+      <div className="mt-6 grid grid-cols-2 gap-2 rounded-2xl bg-white/95 p-2 backdrop-blur">
         <Button variant="secondary" onClick={() => router.push(`/add-price?productId=${product.productId}`)}>
           Update Price
         </Button>

@@ -15,6 +15,7 @@ export function Chrome({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { loadingProducts } = useAppStore();
   const hideNavigation = authRoutes.some((route) => pathname.startsWith(route));
+  const hideBottomNav = hideNavigation || pathname.startsWith('/search');
 
   useEffect(() => {
     const updateViewportVars = () => {
@@ -52,13 +53,13 @@ export function Chrome({ children }: { children: ReactNode }) {
         <main
           className={cn(
             'w-full lg:pb-0',
-            pathname === '/' ? 'overflow-hidden pb-16' : 'app-scroll pb-28'
+            pathname === '/' ? 'overflow-hidden pb-16' : pathname.startsWith('/search') ? 'app-scroll pb-8' : 'app-scroll pb-28'
           )}
         >
           {children}
         </main>
       </div>
-      {!hideNavigation ? <BottomNav /> : null}
+      {!hideBottomNav ? <BottomNav /> : null}
 
       {loadingProducts ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/90">
