@@ -1,8 +1,7 @@
 'use client';
 
-import { Bell, ChevronRight, Gift, HelpCircle, Info, LogOut, Star, Trophy, UserCircle2 } from 'lucide-react';
+import { ChevronRight, Gift, HelpCircle, Info, LogOut, Star, Trophy, UserCircle2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
 
 import { AppBar } from '@/components/navigation/AppBar';
 import { Badge } from '@/components/shared/Badge';
@@ -12,15 +11,6 @@ import { useAppStore } from '@/store/app-store';
 export default function ProfilePage() {
   const router = useRouter();
   const { user, signOut } = useAppStore();
-  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
-
-  const toggleNotifications = async () => {
-    if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
-      await Notification.requestPermission();
-    }
-
-    setNotificationsEnabled((value) => !value);
-  };
 
   const settingsItems = [
     { label: 'Help & Support', icon: HelpCircle, onClick: () => router.push('/help') },
@@ -29,7 +19,7 @@ export default function ProfilePage() {
 
   return (
     <div className="mx-auto w-full max-w-screen-xl px-4 pb-8 lg:px-8">
-      <AppBar title="Profile" />
+      <AppBar title="Profile" sticky />
 
       <Card className="mx-auto mt-4 max-w-xl p-6 text-center">
         <div className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-gradient-to-br from-blue-500 to-green-500 text-white">
@@ -68,27 +58,7 @@ export default function ProfilePage() {
 
       <Card className="mx-auto mt-4 max-w-xl p-5">
         <h2 className="text-lg font-bold text-gray-900">Settings</h2>
-
-        <div className="mt-3 flex items-center gap-3 rounded-xl px-2 py-2">
-          <span className="grid h-10 w-10 place-items-center rounded-full bg-gray-100 text-gray-700">
-            <Bell size={18} />
-          </span>
-          <div className="flex-1">
-            <p className="font-semibold text-gray-900">Daily Price Reminders</p>
-            <p className="text-xs text-gray-600">Get daily reminders for grocery prices</p>
-          </div>
-          <button
-            aria-label="Toggle reminders"
-            onClick={toggleNotifications}
-            className={`relative h-7 w-12 rounded-full transition-colors ${notificationsEnabled ? 'bg-brand-700' : 'bg-gray-300'}`}
-          >
-            <span
-              className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-transform ${notificationsEnabled ? 'translate-x-6' : 'translate-x-1'}`}
-            />
-          </button>
-        </div>
-
-        <div className="my-3 h-px bg-gray-200" />
+        
 
         <div className="space-y-1">
           {settingsItems.map((item) => (

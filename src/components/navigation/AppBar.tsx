@@ -10,18 +10,21 @@ import { cn } from '@/lib/utils';
 export function AppBar({
   title,
   showBack,
-  rightAction
+  rightAction,
+  sticky
 }: {
   title: string;
   showBack?: boolean;
   rightAction?: ReactNode;
+  sticky?: boolean;
 }) {
   const router = useRouter();
 
   return (
     <header
       className={cn(
-        'relative z-40 mt-3 flex h-12 items-center justify-between rounded-[1.25rem] border border-gray-200/65 bg-white/72 px-3.5 shadow-[0_6px_16px_rgba(15,23,42,0.06)] backdrop-blur-xl md:h-14'
+        'z-40 mt-3 flex h-12 items-center justify-between rounded-[1.25rem] border border-gray-200/65 bg-white/72 px-3.5 shadow-[0_6px_16px_rgba(15,23,42,0.06)] backdrop-blur-xl md:h-14',
+        sticky ? 'sticky top-3' : 'relative'
       )}
     >
       <div className="flex w-9 items-center justify-start">
