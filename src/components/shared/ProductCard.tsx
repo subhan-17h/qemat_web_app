@@ -14,6 +14,7 @@ export function ProductCard({
   product,
   compact,
   searchCompact,
+  homePopular,
   showFavorite,
   favorited,
   onFavoriteToggle,
@@ -22,6 +23,7 @@ export function ProductCard({
   product: Product;
   compact?: boolean;
   searchCompact?: boolean;
+  homePopular?: boolean;
   showFavorite?: boolean;
   favorited?: boolean;
   onFavoriteToggle?: () => void;
@@ -77,7 +79,7 @@ export function ProductCard({
           alt={product.name}
           fill
           loading="lazy"
-          className={cn(compact ? 'object-cover' : 'object-cover')}
+          className={cn(homePopular ? 'object-contain' : compact ? 'object-cover' : 'object-cover')}
           sizes="(max-width: 768px) 50vw, 25vw"
         />
         {showFavorite ? (
@@ -96,16 +98,24 @@ export function ProductCard({
         </h3>
         <p className={cn('font-bold text-brand-700', compact ? 'text-base' : 'text-lg')}>{formatPKR(product.price)}</p>
         <p className={cn('text-gray-500', compact ? 'text-[11px]' : 'text-xs')}>{product.matchedProductsCount}+ similar products</p>
-        <div className="flex items-center justify-between gap-2">
-          <span className={cn('rounded-full bg-gray-100 font-medium text-gray-600', compact ? 'px-2 py-0.5 text-[10px]' : 'px-2 py-1 text-xs')}>
-            {product.storeId}
-          </span>
-          <Link href={`/product/${product.productId}`}>
-            <Button size={compact ? 'sm' : 'sm'} className={cn(compact ? 'h-8 w-20 text-xs' : 'w-24')}>
+        {homePopular ? (
+          <Link href={`/product/${product.productId}`} className="block">
+            <Button size="sm" className={cn('w-full', compact ? 'h-9 text-sm' : '')}>
               Compare
             </Button>
           </Link>
-        </div>
+        ) : (
+          <div className="flex items-center justify-between gap-2">
+            <span className={cn('rounded-full bg-gray-100 font-medium text-gray-600', compact ? 'px-2 py-0.5 text-[10px]' : 'px-2 py-1 text-xs')}>
+              {product.storeId}
+            </span>
+            <Link href={`/product/${product.productId}`}>
+              <Button size={compact ? 'sm' : 'sm'} className={cn(compact ? 'h-8 w-20 text-xs' : 'w-24')}>
+                Compare
+              </Button>
+            </Link>
+          </div>
+        )}
       </div>
     </Card>
   );

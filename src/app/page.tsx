@@ -85,6 +85,7 @@ export default function HomePage() {
                     key={product.productId}
                     product={product}
                     compact
+                    homePopular
                     className="min-w-[148px] border-gray-200/70 shadow-none"
                   />
                 ))}
@@ -97,6 +98,7 @@ export default function HomePage() {
                       key={product.productId}
                       product={product}
                       compact
+                      homePopular
                       className="border-gray-200/70 shadow-none"
                     />
                   ))}

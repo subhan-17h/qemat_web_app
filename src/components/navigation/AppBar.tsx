@@ -27,7 +27,7 @@ export function AppBar({
         sticky ? 'sticky top-3' : 'relative'
       )}
     >
-      <div className="flex w-9 items-center justify-start">
+      <div className="flex min-w-9 items-center justify-start">
         {showBack ? (
           <button aria-label="Go back" onClick={() => router.back()} className="rounded-full p-2 text-gray-700 hover:bg-gray-100">
             <ChevronLeft size={20} />
@@ -37,7 +37,7 @@ export function AppBar({
         )}
       </div>
       <h1 className="flex-1 truncate px-2 text-left text-lg font-bold text-gray-900 md:text-xl">{title}</h1>
-      <div className="flex w-9 items-center justify-end">{rightAction}</div>
+      <div className="flex min-w-9 items-center justify-end gap-1">{rightAction}</div>
     </header>
   );
 }
