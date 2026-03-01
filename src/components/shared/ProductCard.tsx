@@ -27,7 +27,7 @@ export function ProductCard({
 }) {
   return (
     <Card className={cn('overflow-hidden p-0', className)}>
-      <div className="relative h-32 w-full">
+      <div className={cn('relative w-full', compact ? 'h-24' : 'h-32')}>
         <Image
           src={product.imageUrl}
           alt={product.name}
@@ -46,19 +46,21 @@ export function ProductCard({
           </button>
         ) : null}
       </div>
-      <div className="space-y-2 p-3">
-        <h3 className="line-clamp-2 min-h-10 text-sm font-semibold text-gray-900 md:text-base">{product.name}</h3>
-        <p className="text-lg font-bold text-brand-700">{formatPKR(product.price)}</p>
-        <p className="text-xs text-gray-500">{product.matchedProductsCount}+ similar products</p>
+      <div className={cn('space-y-2', compact ? 'p-2.5' : 'p-3')}>
+        <h3 className={cn('line-clamp-2 font-semibold text-gray-900', compact ? 'min-h-0 text-sm' : 'min-h-10 text-sm md:text-base')}>
+          {product.name}
+        </h3>
+        <p className={cn('font-bold text-brand-700', compact ? 'text-base' : 'text-lg')}>{formatPKR(product.price)}</p>
+        <p className={cn('text-gray-500', compact ? 'text-[11px]' : 'text-xs')}>{product.matchedProductsCount}+ similar products</p>
         <div className="flex items-center justify-between gap-2">
-          <span className="rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600">{product.storeId}</span>
-          {!compact ? (
-            <Link href={`/product/${product.productId}`}>
-              <Button size="sm" className="w-24">
-                Compare
-              </Button>
-            </Link>
-          ) : null}
+          <span className={cn('rounded-full bg-gray-100 font-medium text-gray-600', compact ? 'px-2 py-0.5 text-[10px]' : 'px-2 py-1 text-xs')}>
+            {product.storeId}
+          </span>
+          <Link href={`/product/${product.productId}`}>
+            <Button size={compact ? 'sm' : 'sm'} className={cn(compact ? 'h-8 w-20 text-xs' : 'w-24')}>
+              Compare
+            </Button>
+          </Link>
         </div>
       </div>
     </Card>

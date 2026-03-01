@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 
 import { BottomNav } from '@/components/navigation/BottomNav';
 import { Sidebar } from '@/components/navigation/Sidebar';
+import { cn } from '@/lib/utils';
 import { useAppStore } from '@/store/app-store';
 
 const authRoutes = ['/sign-in', '/sign-up'];
@@ -48,7 +49,14 @@ export function Chrome({ children }: { children: ReactNode }) {
     <>
       <div className="app-shell mx-auto flex max-w-[1600px]">
         {!hideNavigation ? <Sidebar /> : null}
-        <main className="app-scroll w-full pb-28 lg:pb-0">{children}</main>
+        <main
+          className={cn(
+            'w-full lg:pb-0',
+            pathname === '/' ? 'overflow-hidden pb-16' : 'app-scroll pb-28'
+          )}
+        >
+          {children}
+        </main>
       </div>
       {!hideNavigation ? <BottomNav /> : null}
 

@@ -17,10 +17,10 @@ export default function HomePage() {
   const trending = [...products].sort((a, b) => b.matchedProductsCount - a.matchedProductsCount).slice(0, 8);
 
   return (
-    <div className="mx-auto w-full max-w-screen-xl px-4 pb-8 lg:px-8">
+    <div className="mx-auto h-full w-full max-w-screen-xl overflow-hidden px-4 pb-2 lg:px-8">
       <AppBar title="Qemat" />
 
-      <div className="mt-4 space-y-6">
+      <div className="mt-4 space-y-5">
         <Link href="/search?browse=true">
           <Card className="flex cursor-pointer items-center gap-3">
             <span className="grid h-11 w-11 place-items-center rounded-xl bg-green-100 text-brand-700">
@@ -34,17 +34,22 @@ export default function HomePage() {
           </Card>
         </Link>
 
-        <section>
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <section className="pt-1">
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             {homeCategories.map((category) => {
               const href = category.key === 'grocery' ? '/search/categories' : '/search?pharma=true';
 
               return (
-                <Link key={category.key} href={href} className="rounded-2xl p-4 shadow-sm" style={{ backgroundColor: category.bg }}>
+                <Link
+                  key={category.key}
+                  href={href}
+                  className="min-h-[132px] rounded-2xl p-4 shadow-sm"
+                  style={{ backgroundColor: category.bg }}
+                >
                   <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-xl bg-white/80">
-                    <Image src={category.image} alt={category.title} width={30} height={30} />
+                    <Image src={category.image} alt={category.title} width={28} height={28} />
                   </div>
-                  <p className="text-center text-sm font-semibold text-gray-900">{category.title}</p>
+                  <p className="text-center text-[15px] font-semibold text-gray-900">{category.title}</p>
                   <p className="text-center text-xs text-gray-500">
                     <span dir="rtl" className="font-urdu">
                       {category.urdu}
@@ -56,7 +61,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="space-y-3">
+        <section className="space-y-4 pt-1">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold text-gray-900">Most Popular</h2>
             <Link href="/search">
@@ -79,7 +84,8 @@ export default function HomePage() {
                   <ProductCard
                     key={product.productId}
                     product={product}
-                    className="min-w-[165px] border-gray-200/70 shadow-none"
+                    compact
+                    className="min-w-[148px] border-gray-200/70 shadow-none"
                   />
                 ))}
               </div>
@@ -90,6 +96,7 @@ export default function HomePage() {
                     <ProductCard
                       key={product.productId}
                       product={product}
+                      compact
                       className="border-gray-200/70 shadow-none"
                     />
                   ))}
