@@ -10,9 +10,10 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   error?: string;
   startSlot?: ReactNode;
   endSlot?: ReactNode;
+  wrapperClassName?: string;
 }
 
-export function Input({ label, className, error, startSlot, endSlot, ...props }: InputProps) {
+export function Input({ label, className, error, startSlot, endSlot, wrapperClassName, ...props }: InputProps) {
   const { isGlass } = useTheme();
 
   return (
@@ -21,7 +22,8 @@ export function Input({ label, className, error, startSlot, endSlot, ...props }:
       <span
         className={cn(
           'flex h-12 items-center gap-2 overflow-hidden rounded-xl border px-3 focus-within:ring-2 focus-within:ring-brand-400/60',
-          isGlass ? 'rounded-2xl border-white/40 bg-white/30 backdrop-blur-md' : 'border-gray-200 bg-white'
+          isGlass ? 'rounded-2xl border-white/40 bg-white/30 backdrop-blur-md' : 'border-gray-200 bg-white',
+          wrapperClassName
         )}
       >
         {startSlot ? <span className="text-gray-500">{startSlot}</span> : null}

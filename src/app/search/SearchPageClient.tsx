@@ -2,6 +2,7 @@
 
 import { Search, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useSearchParams } from 'next/navigation';
 
 import { AppBar } from '@/components/navigation/AppBar';
@@ -14,8 +15,9 @@ import { cn } from '@/lib/utils';
 import { useAppStore } from '@/store/app-store';
 
 export default function SearchPage() {
+  const router = useRouter();
   const params = useSearchParams();
-  const { products, loadingProducts } = useAppStore();
+  const { products, loadingProducts, isFavorited, toggleFavorite } = useAppStore();
 
   const category = params.get('category');
   const pharma = params.get('pharma') === 'true';
@@ -74,6 +76,14 @@ export default function SearchPage() {
     }
   };
 
+  const handleToggleFavorite = async (productId: string) => {
+    try {
+      await toggleFavorite(productId);
+    } catch {
+      router.push('/sign-in');
+    }
+  };
+
   return (
     <div className="mx-auto w-full max-w-screen-xl px-4 pb-6 lg:px-8">
       <AppBar
@@ -104,7 +114,14 @@ export default function SearchPage() {
       ) : filtered.length ? (
         <div className="grid grid-cols-2 gap-3 pt-3 md:grid-cols-3 lg:grid-cols-4">
           {filtered.map((product) => (
-            <ProductCard key={product.productId} product={product} />
+            <ProductCard
+              key={product.productId}
+              product={product}
+              searchCompact
+              showFavorite
+              favorited={isFavorited(product.productId)}
+              onFavoriteToggle={() => handleToggleFavorite(product.productId)}
+            />
           ))}
         </div>
       ) : (
@@ -188,14 +205,12 @@ export default function SearchPage() {
         <>
           <div className="fixed inset-0 z-50 bg-black/12" onClick={closeSearch} />
           <div className="fixed left-1/2 top-[4.2rem] z-[60] w-[calc(100%-2rem)] max-w-xl -translate-x-1/2">
-            <div
-              className="rounded-[1.25rem] border border-white/45 bg-white/26 p-3 shadow-[0_12px_30px_rgba(15,23,42,0.12)] backdrop-blur-2xl"
-              onClick={(event) => event.stopPropagation()}
-            >
-              <div className="flex items-center gap-2">
+            <div onClick={(event) => event.stopPropagation()}>
+              <div className="flex items-center gap-2 rounded-full border border-white/35 bg-white/12 p-1.5 shadow-[0_12px_30px_rgba(15,23,42,0.12)] backdrop-blur-xl">
                 <Input
                   autoFocus
                   className="text-base"
+                  wrapperClassName="h-10 rounded-full border-gray-300/70 bg-white/82 focus-within:ring-0 focus-within:border-gray-300/70"
                   placeholder="Milk, Sugar, Rice..."
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}

@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { Heart } from 'lucide-react';
+import { BadgeCheck, Heart } from 'lucide-react';
 
 import { Button } from '@/components/shared/Button';
 import { Card } from '@/components/shared/Card';
@@ -13,6 +13,7 @@ import { Product } from '@/types/product';
 export function ProductCard({
   product,
   compact,
+  searchCompact,
   showFavorite,
   favorited,
   onFavoriteToggle,
@@ -20,11 +21,54 @@ export function ProductCard({
 }: {
   product: Product;
   compact?: boolean;
+  searchCompact?: boolean;
   showFavorite?: boolean;
   favorited?: boolean;
   onFavoriteToggle?: () => void;
   className?: string;
 }) {
+  if (searchCompact) {
+    return (
+      <Card
+        className={cn(
+          'h-[218px] overflow-hidden rounded-[1.3rem] border-gray-200/70 p-0 shadow-[0_9px_14px_-11px_rgba(15,23,42,0.40)]',
+          className
+        )}
+      >
+        <div className="relative h-28 w-full">
+          <Image
+            src={product.imageUrl}
+            alt={product.name}
+            fill
+            loading="lazy"
+            className="object-contain"
+            sizes="(max-width: 768px) 50vw, 25vw"
+          />
+          <button
+            aria-label="Toggle favorite"
+            onClick={onFavoriteToggle}
+            className="absolute right-2 top-2 grid h-9 w-9 place-items-center rounded-full border border-gray-200 bg-white text-gray-700 shadow-sm"
+          >
+            <Heart size={16} className={favorited ? 'fill-current text-red-600' : ''} />
+          </button>
+        </div>
+        <div className="space-y-1 p-2.5">
+          <h3 className="line-clamp-2 text-[13px] font-semibold leading-snug text-gray-900">{product.name}</h3>
+          <p className="flex items-center gap-1 text-[15px] font-bold leading-none text-brand-700">
+            {formatPKR(product.price)}
+            <BadgeCheck size={14} className="text-green-600" />
+          </p>
+          <div className="flex items-center justify-between gap-2 pt-0.5">
+            <span className="text-[13px] font-medium text-gray-600">{product.storeId}</span>
+            <span className="rounded-full border border-sky-200 bg-sky-100 px-1.5 py-1 text-[10px] font-bold leading-none text-sky-700">
+              {product.matchedProductsCount}+ similar
+            </span>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
   return (
     <Card className={cn('overflow-hidden p-0', className)}>
       <div className={cn('relative w-full', compact ? 'h-24' : 'h-32')}>
