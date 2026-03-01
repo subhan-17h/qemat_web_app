@@ -17,8 +17,11 @@ export function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-3 left-1/2 z-40 w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 lg:hidden">
-      <div className="rounded-[1.65rem] border border-white/45 bg-white/34 px-1.5 py-1.5 shadow-[0_22px_48px_-30px_rgba(15,23,42,0.38),0_10px_20px_-16px_rgba(15,23,42,0.24)] backdrop-blur-2xl">
+    <nav
+      className="fixed left-1/2 z-40 w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 lg:hidden"
+      style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + var(--browser-bar-offset, 0px) + 4px)' }}
+    >
+      <div className="rounded-[1.55rem] border border-white/15 bg-black/30 px-1 py-0.5 backdrop-blur-lg">
         <ul className="grid grid-cols-4 gap-0.5">
           {items.map((item) => {
             const active = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
@@ -29,11 +32,20 @@ export function BottomNav() {
                 <Link
                   href={item.href}
                   className={cn(
-                    'flex flex-col items-center gap-0.5 rounded-xl px-1.5 py-1 text-[11px] font-medium transition-colors',
-                    active ? 'bg-white/38 text-brand-500' : 'text-gray-600'
+                    'flex flex-col items-center gap-0 rounded-xl px-1 py-0.5 text-[9px] font-medium transition-colors',
+                    active ? 'text-white' : 'text-gray-200'
                   )}
                 >
-                  <Icon size={16} />
+                  <span
+                    className={cn(
+                      'relative grid h-9 w-9 place-items-center rounded-full',
+                      active
+                        ? 'bg-brand-500 text-black'
+                        : 'bg-black/50 text-gray-100'
+                    )}
+                  >
+                    <Icon size={17} />
+                  </span>
                   <span>{item.label}</span>
                 </Link>
               </li>
