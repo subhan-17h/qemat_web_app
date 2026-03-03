@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Optional, Sequence
+from datetime import datetime
 
 from app.db import get_pool
 from app.models.product import Product
@@ -45,6 +46,13 @@ async def set_bundle_version(
     last_updated_at: Optional[str],
     product_count: int,
 ) -> None:
+    parsed_last_updated = None
+    if last_updated_at:
+        try:
+            parsed_last_updated = datetime.fromisoformat(str(last_updated_at).replace("Z", "+00:00"))
+        except (ValueError, TypeError):
+            parsed_last_updated = None
+
     pool = await get_pool()
     async with pool.acquire() as conn:
         await conn.execute(
@@ -60,7 +68,7 @@ async def set_bundle_version(
             product_type,
             version,
             file_url,
-            last_updated_at,
+            parsed_last_updated,
             product_count,
         )
 
