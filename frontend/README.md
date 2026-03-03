@@ -19,7 +19,7 @@ npm run dev
 Set `NEXT_PUBLIC_API_BASE_URL` in `.env.local` if your backend is not running at `http://localhost:8000`.
 
 ## Backend Integration
-- Product listing/search/trending data is fetched from the Python backend (`/api/products`).
+- Product listing/search/trending data is fetched from the Python backend (`/api/products` with pagination + `/api/products/search`).
 - Sign-in/sign-up uses backend auth (`/api/auth/login`, `/api/auth/register`).
 - Favorites are synced through backend favorites APIs (`/api/favorites`).
 

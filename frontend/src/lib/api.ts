@@ -3,8 +3,13 @@ import { User } from '@/types/user';
 
 type ProductType = 'grocery' | 'pharma';
 
-interface ProductBundleResponse {
+type ProductSort = 'relevance' | 'priceAsc' | 'priceDesc' | 'nameAsc';
+
+interface ProductListResponse {
   products: Record<string, unknown>[];
+  total: number;
+  limit?: number;
+  offset?: number;
 }
 
 interface AuthUserResponse {
@@ -24,6 +29,19 @@ interface AuthResponse {
 
 interface FavoritesResponse {
   favoriteIds: string[];
+}
+
+interface FavoritesProductsResponse {
+  products: Record<string, unknown>[];
+}
+
+interface ProductResponse {
+  product: Record<string, unknown>;
+}
+
+interface ProductWithMatchesResponse {
+  product: Record<string, unknown>;
+  matches: Record<string, unknown>[];
 }
 
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000').replace(/\/+$/, '');
@@ -114,12 +132,6 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return (await response.json()) as T;
 }
 
-async function fetchProductsByType(type: ProductType): Promise<Product[]> {
-  const query = new URLSearchParams({ type });
-  const response = await request<ProductBundleResponse>(`/api/products/bundle?${query.toString()}`);
-  return (response.products ?? []).map((item) => normalizeProduct(item, type === 'pharma'));
-}
-
 function buildUser(authUser: AuthUserResponse, token: string, fallbackName?: string): User {
   const displayName = authUser.displayName ?? authUser.display_name ?? null;
   const name = displayName || authUser.username || fallbackName || authUser.email.split('@')[0] || 'Qemat User';
@@ -135,19 +147,78 @@ function buildUser(authUser: AuthUserResponse, token: string, fallbackName?: str
   };
 }
 
-export async function fetchAllProducts(): Promise<Product[]> {
-  const [grocery, pharma] = await Promise.all([
-    fetchProductsByType('grocery'),
-    fetchProductsByType('pharma')
-  ]);
-
-  const deduped = new Map<string, Product>();
-  [...grocery, ...pharma].forEach((product) => {
-    if (!deduped.has(product.productId)) {
-      deduped.set(product.productId, product);
-    }
+export async function fetchProductsPage(params: {
+  type: ProductType;
+  limit: number;
+  offset: number;
+  store?: string;
+  category?: string;
+  sort?: ProductSort;
+}): Promise<{ products: Product[]; total: number; limit: number; offset: number }> {
+  const query = new URLSearchParams({
+    type: params.type,
+    limit: String(params.limit),
+    offset: String(params.offset)
   });
-  return Array.from(deduped.values());
+  if (params.store) query.set('store', params.store);
+  if (params.category) query.set('category', params.category);
+  if (params.sort) query.set('sort', params.sort);
+
+  const response = await request<ProductListResponse>(`/api/products?${query.toString()}`);
+  const products = (response.products ?? []).map((item) => normalizeProduct(item, params.type === 'pharma'));
+  return {
+    products,
+    total: response.total ?? 0,
+    limit: response.limit ?? params.limit,
+    offset: response.offset ?? params.offset
+  };
+}
+
+export async function searchProductsPage(params: {
+  type: ProductType;
+  query: string;
+  limit: number;
+  offset: number;
+  store?: string;
+  category?: string;
+  sort?: ProductSort;
+}): Promise<{ products: Product[]; total: number; limit: number; offset: number }> {
+  const query = new URLSearchParams({
+    q: params.query,
+    type: params.type,
+    limit: String(params.limit),
+    offset: String(params.offset)
+  });
+  if (params.store) query.set('store', params.store);
+  if (params.category) query.set('category', params.category);
+  if (params.sort) query.set('sort', params.sort);
+
+  const response = await request<ProductListResponse>(`/api/products/search?${query.toString()}`);
+  const products = (response.products ?? []).map((item) => normalizeProduct(item, params.type === 'pharma'));
+  return {
+    products,
+    total: response.total ?? 0,
+    limit: response.limit ?? params.limit,
+    offset: response.offset ?? params.offset
+  };
+}
+
+export async function fetchTrendingProducts(): Promise<Product[]> {
+  const response = await request<{ products: Record<string, unknown>[] }>('/api/products/trending');
+  return (response.products ?? []).map((item) => normalizeProduct(item, false));
+}
+
+export async function fetchProductById(productId: string): Promise<Product> {
+  const response = await request<ProductResponse>(`/api/products/${encodeURIComponent(productId)}`);
+  return normalizeProduct(response.product ?? {});
+}
+
+export async function fetchProductWithMatches(productId: string): Promise<{ product: Product; matches: Product[] }> {
+  const response = await request<ProductWithMatchesResponse>(`/api/products/${encodeURIComponent(productId)}/matches`);
+  return {
+    product: normalizeProduct(response.product ?? {}),
+    matches: (response.matches ?? []).map((item) => normalizeProduct(item))
+  };
 }
 
 export async function signInWithBackend(email: string, password: string): Promise<User> {
@@ -173,6 +244,15 @@ export async function fetchFavorites(token: string): Promise<string[]> {
     }
   });
   return response.favoriteIds ?? [];
+}
+
+export async function fetchFavoriteProducts(token: string): Promise<Product[]> {
+  const response = await request<FavoritesProductsResponse>('/api/favorites/products', {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+  return (response.products ?? []).map((item) => normalizeProduct(item));
 }
 
 export async function toggleFavoriteOnBackend(token: string, productId: string): Promise<void> {

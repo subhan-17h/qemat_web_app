@@ -70,8 +70,9 @@ async def search_products(
     product_type: str = Query("grocery", alias="type", enum=["grocery", "pharma"]),
     store: Optional[str] = Query(None, description="Filter by store ID"),
     category: Optional[str] = Query(None, description="Filter by category"),
-    page: int = Query(1, ge=1),
+    offset: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
+    sort: str = Query("relevance", enum=["relevance", "priceAsc", "priceDesc", "nameAsc"]),
 ):
     """Search products by name and category variations (includes Urdu/Roman Urdu).
     
@@ -82,11 +83,13 @@ async def search_products(
         product_type=product_type,
         store=store,
         category=category,
-        page=page,
+        offset=offset,
         limit=limit,
+        sort=sort,
     )
     pages = (total + limit - 1) // limit if limit > 0 else 1
-    return ProductListResponse(products=products, total=total, page=page, pages=pages)
+    page = (offset // limit) + 1 if limit > 0 else 1
+    return ProductListResponse(products=products, total=total, page=page, pages=pages, limit=limit, offset=offset)
 
 
 @router.get("/trending", response_model=TrendingResponse)
@@ -104,19 +107,22 @@ async def list_products(
     product_type: str = Query("grocery", alias="type", enum=["grocery", "pharma"]),
     store: Optional[str] = Query(None, description="Filter by store ID"),
     category: Optional[str] = Query(None, description="Filter by category"),
-    page: int = Query(1, ge=1),
+    offset: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
+    sort: str = Query("relevance", enum=["relevance", "priceAsc", "priceDesc", "nameAsc"]),
 ):
     """List products with optional filters."""
     products, total = await product_service.get_products_filtered(
         product_type=product_type,
         store=store,
         category=category,
-        page=page,
+        offset=offset,
         limit=limit,
+        sort=sort,
     )
     pages = (total + limit - 1) // limit if limit > 0 else 1
-    return ProductListResponse(products=products, total=total, page=page, pages=pages)
+    page = (offset // limit) + 1 if limit > 0 else 1
+    return ProductListResponse(products=products, total=total, page=page, pages=pages, limit=limit, offset=offset)
 
 
 @router.get("/{product_id}", response_model=ProductResponse)

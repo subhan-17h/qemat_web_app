@@ -13,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
 from app.services.firebase_service import init_firebase
+from app.db import init_db, close_pool
 from app.routers import products, auth, favorites, analytics
 
 
@@ -24,11 +25,17 @@ async def lifespan(app: FastAPI):
     print("✅ Firebase Admin SDK initialized")
     print(f"📦 Project: {get_settings().firebase_project_id}")
     print(f"🌐 CORS origins: {get_settings().cors_origins_list}")
+    if get_settings().database_url:
+        await init_db()
+        print("🗄️ Database initialized")
+    else:
+        print("⚠️ DATABASE_URL not set. Database-backed endpoints will fail until configured.")
 
     yield
 
     # Shutdown: cleanup
     print("🛑 Shutting down Qeemat Backend")
+    await close_pool()
 
 
 app = FastAPI(

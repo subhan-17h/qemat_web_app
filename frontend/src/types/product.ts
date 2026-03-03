@@ -1,4 +1,4 @@
-export type StoreId = 'Al-Fatah' | 'Carrefour' | 'Imtiaz' | 'Jalal Sons' | 'Metro' | 'Rainbow';
+export type StoreId = string;
 
 export interface Product {
   productId: string;

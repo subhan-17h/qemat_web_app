@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { ChevronRight, Search } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 import { AppBar } from '@/components/navigation/AppBar';
 import { Button } from '@/components/shared/Button';
@@ -10,11 +11,31 @@ import { Card } from '@/components/shared/Card';
 import { ProductCard } from '@/components/shared/ProductCard';
 import { SkeletonCard } from '@/components/shared/SkeletonCard';
 import { homeCategories } from '@/lib/mock-data';
-import { useAppStore } from '@/store/app-store';
+import { fetchTrendingProducts } from '@/lib/api';
+import { Product } from '@/types/product';
 
 export default function HomePage() {
-  const { products, loadingProducts } = useAppStore();
-  const trending = [...products].sort((a, b) => b.matchedProductsCount - a.matchedProductsCount).slice(0, 8);
+  const [trending, setTrending] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    const loadTrending = async () => {
+      try {
+        const data = await fetchTrendingProducts();
+        if (active) setTrending(data);
+      } catch (error) {
+        console.error('Failed to load trending products.', error);
+        if (active) setTrending([]);
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+    void loadTrending();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return (
     <div className="mx-auto h-full w-full max-w-screen-xl overflow-hidden px-4 pb-2 lg:px-8">
@@ -71,7 +92,7 @@ export default function HomePage() {
             </Link>
           </div>
 
-          {loadingProducts ? (
+          {loading ? (
             <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
               {Array.from({ length: 6 }).map((_, index) => (
                 <SkeletonCard key={index} />

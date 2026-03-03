@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     port: int = 8000
     cors_origins: str = "http://localhost:3000,https://qemat.com"
 
+    # Database
+    database_url: Optional[str] = None
+
     # Caching (seconds)
     bundle_cache_ttl: int = 3600  # 1 hour
     trending_cache_ttl: int = 86400  # 24 hours

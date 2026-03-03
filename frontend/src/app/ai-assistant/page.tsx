@@ -2,14 +2,16 @@
 
 import { AlertCircle, ShoppingBag } from 'lucide-react';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { AppBar } from '@/components/navigation/AppBar';
 import { Button } from '@/components/shared/Button';
 import { Card } from '@/components/shared/Card';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { formatPKR } from '@/lib/formatters';
+import { fetchFavoriteProducts, fetchProductWithMatches } from '@/lib/api';
 import { useAppStore } from '@/store/app-store';
+import { Product } from '@/types/product';
 
 interface SavingRow {
   productId: string;
@@ -24,17 +26,35 @@ interface SavingRow {
 }
 
 export default function AIAssistantPage() {
-  const { user, favorites, products } = useAppStore();
+  const { user } = useAppStore();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
   const [rows, setRows] = useState<SavingRow[] | null>(null);
+  const [favorites, setFavorites] = useState<Product[]>([]);
 
-  const favoriteProducts = useMemo(
-    () => products.filter((item) => favorites.includes(item.productId)),
-    [products, favorites]
-  );
+  useEffect(() => {
+    let active = true;
+    const loadFavorites = async () => {
+      if (!user?.token) {
+        setFavorites([]);
+        return;
+      }
+      try {
+        const products = await fetchFavoriteProducts(user.token);
+        if (active) setFavorites(products);
+      } catch (err) {
+        console.error('Failed to load favorites for assistant.', err);
+        if (active) setFavorites([]);
+      }
+    };
 
-  const totalSavings = useMemo(() => rows?.reduce((sum, row) => sum + row.maxSavedAmount, 0) ?? 0, [rows]);
+    void loadFavorites();
+    return () => {
+      active = false;
+    };
+  }, [user]);
+
+  const totalSavings = rows?.reduce((sum, row) => sum + row.maxSavedAmount, 0) ?? 0;
 
   const runAssistant = async () => {
     setError(false);
@@ -42,9 +62,12 @@ export default function AIAssistantPage() {
     setRows(null);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 600));
-      const nextRows: SavingRow[] = favoriteProducts.map((product) => {
-        const related = products.filter((item) => [product.productId, ...product.matchedProductIds].includes(item.productId));
+      const responses = await Promise.all(
+        favorites.map((product) => fetchProductWithMatches(product.productId))
+      );
+
+      const nextRows: SavingRow[] = responses.map(({ product, matches }) => {
+        const related = [product, ...matches];
         const cheapest = related.reduce((lowest, current) => (current.price < lowest.price ? current : lowest), related[0]);
 
         const diffs = related

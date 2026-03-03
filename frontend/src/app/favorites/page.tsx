@@ -1,7 +1,7 @@
 'use client';
 
 import { Heart, HeartOff, Lock } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { AppBar } from '@/components/navigation/AppBar';
@@ -9,25 +9,52 @@ import { BottomSheet } from '@/components/shared/BottomSheet';
 import { Button } from '@/components/shared/Button';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { ProductCard } from '@/components/shared/ProductCard';
+import { fetchFavoriteProducts } from '@/lib/api';
 import { useAppStore } from '@/store/app-store';
+import { Product } from '@/types/product';
 
 export default function FavoritesPage() {
   const router = useRouter();
-  const { user, favorites, products, removeFavorite, isFavorited, toggleFavorite } = useAppStore();
+  const { user, removeFavorite, isFavorited, toggleFavorite } = useAppStore();
 
+  const [favoriteProducts, setFavoriteProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(false);
   const [removeTarget, setRemoveTarget] = useState<string | null>(null);
-  const favoriteProducts = useMemo(
-    () => products.filter((item) => favorites.includes(item.productId)),
-    [products, favorites]
-  );
+
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      if (!user?.token) {
+        setFavoriteProducts([]);
+        return;
+      }
+      setLoading(true);
+      try {
+        const products = await fetchFavoriteProducts(user.token);
+        if (active) setFavoriteProducts(products);
+      } catch (error) {
+        console.error('Failed to load favorite products.', error);
+        if (active) setFavoriteProducts([]);
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+
+    void load();
+    return () => {
+      active = false;
+    };
+  }, [user]);
 
   const handleToggleFavorite = async (productId: string) => {
     await toggleFavorite(productId);
+    setFavoriteProducts((current) => current.filter((item) => item.productId !== productId));
   };
 
   const handleRemove = async () => {
     if (!removeTarget) return;
     await removeFavorite(removeTarget);
+    setFavoriteProducts((current) => current.filter((item) => item.productId !== removeTarget));
     setRemoveTarget(null);
   };
 
@@ -42,6 +69,8 @@ export default function FavoritesPage() {
           description="Create a free account to save and track your favourite products"
           action={<Button onClick={() => router.push('/sign-in')}>Sign In</Button>}
         />
+      ) : loading ? (
+        <EmptyState icon={<Heart className="text-gray-300" size={48} />} title="Loading favorites" description="Fetching your saved products..." />
       ) : favoriteProducts.length === 0 ? (
         <EmptyState
           icon={<HeartOff className="text-gray-300" size={48} />}

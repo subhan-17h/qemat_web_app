@@ -20,10 +20,23 @@ pip install -r requirements.txt
 cp .env.example .env
 # Edit .env with your settings
 # Set FIREBASE_WEB_API_KEY if you want server-side email/password login
+# Set DATABASE_URL for PostgreSQL (e.g. postgresql://user:pass@localhost:5432/qemat)
 
 # 5. Run the server
 source venv/bin/activate
 uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+## Bundle Ingestion (PostgreSQL)
+Run the ingestion job to load the latest bundle into Postgres:
+
+```bash
+python -m app.jobs.ingest
+```
+
+Cron (weekly) example:
+```bash
+0 2 * * 0 cd /path/to/backend && /path/to/venv/bin/python -m app.jobs.ingest >> /var/log/qemat-ingest.log 2>&1
 ```
 
 ## API Docs

@@ -2,14 +2,10 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
-import { fetchAllProducts, fetchFavorites, signInWithBackend, signUpWithBackend, toggleFavoriteOnBackend } from '@/lib/api';
-import { products as fallbackProducts } from '@/lib/mock-data';
-import { Product } from '@/types/product';
+import { fetchFavorites, signInWithBackend, signUpWithBackend, toggleFavoriteOnBackend } from '@/lib/api';
 import { User } from '@/types/user';
 
 interface AppStoreValue {
-  products: Product[];
-  loadingProducts: boolean;
   user: User | null;
   favorites: string[];
   signIn: (email: string, password: string) => Promise<void>;
@@ -23,8 +19,6 @@ interface AppStoreValue {
 const AppStoreContext = createContext<AppStoreValue | null>(null);
 
 export function AppStoreProvider({ children }: { children: ReactNode }) {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loadingProducts, setLoadingProducts] = useState(true);
   const [user, setUser] = useState<User | null>(null);
   const [favorites, setFavorites] = useState<string[]>([]);
 
@@ -34,34 +28,6 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     if (userRaw) {
       setUser(JSON.parse(userRaw) as User);
     }
-  }, []);
-
-  useEffect(() => {
-    let active = true;
-
-    const loadProducts = async () => {
-      setLoadingProducts(true);
-      try {
-        const backendProducts = await fetchAllProducts();
-        if (active) {
-          setProducts(backendProducts);
-        }
-      } catch (error) {
-        console.error('Failed to load products from backend. Falling back to local mock data.', error);
-        if (active) {
-          setProducts(fallbackProducts);
-        }
-      } finally {
-        if (active) {
-          setLoadingProducts(false);
-        }
-      }
-    };
-
-    void loadProducts();
-    return () => {
-      active = false;
-    };
   }, []);
 
   useEffect(() => {
@@ -173,8 +139,6 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo(
     () => ({
-      products,
-      loadingProducts,
       user,
       favorites,
       signIn,
@@ -184,7 +148,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       removeFavorite,
       isFavorited
     }),
-    [favorites, isFavorited, loadingProducts, products, removeFavorite, signIn, signOut, signUp, toggleFavorite, user]
+    [favorites, isFavorited, removeFavorite, signIn, signOut, signUp, toggleFavorite, user]
   );
 
   return <AppStoreContext.Provider value={value}>{children}</AppStoreContext.Provider>;

@@ -1,7 +1,7 @@
 'use client';
 
 import { Camera, MapPin, Search } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import { AppBar } from '@/components/navigation/AppBar';
@@ -9,21 +9,22 @@ import { Button } from '@/components/shared/Button';
 import { Card } from '@/components/shared/Card';
 import { Input } from '@/components/shared/Input';
 import { storeIds } from '@/lib/mock-data';
+import { fetchProductById, searchProductsPage } from '@/lib/api';
 import { useAppStore } from '@/store/app-store';
+import { Product } from '@/types/product';
 
 export default function AddPricePage() {
   const router = useRouter();
   const params = useSearchParams();
-  const { user, products } = useAppStore();
+  const { user } = useAppStore();
 
-  const prefillProduct = useMemo(() => products.find((item) => item.productId === params.get('productId'))?.name ?? '', [params, products]);
-
-  const [productName, setProductName] = useState(prefillProduct);
+  const [productName, setProductName] = useState('');
   const [price, setPrice] = useState('');
   const [store, setStore] = useState<string>('Al-Fatah');
   const [location, setLocation] = useState('');
   const [photo, setPhoto] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [suggestions, setSuggestions] = useState<Product[]>([]);
 
   useEffect(() => {
     if (!user) {
@@ -31,13 +32,58 @@ export default function AddPricePage() {
     }
   }, [user, router]);
 
+  useEffect(() => {
+    let active = true;
+    const productId = params.get('productId');
+    if (!productId) return;
+
+    const load = async () => {
+      try {
+        const product = await fetchProductById(productId);
+        if (active) setProductName(product.name);
+      } catch {
+        if (active) setProductName('');
+      }
+    };
+
+    void load();
+    return () => {
+      active = false;
+    };
+  }, [params]);
+
+  useEffect(() => {
+    let active = true;
+    if (!productName.trim()) {
+      setSuggestions([]);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        const response = await searchProductsPage({
+          type: 'grocery',
+          query: productName.trim(),
+          limit: 5,
+          offset: 0
+        });
+        if (active) setSuggestions(response.products);
+      } catch {
+        if (active) setSuggestions([]);
+      }
+    }, 250);
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [productName]);
+
   if (!user) {
     return null;
   }
 
-  const productSuggestions = productName
-    ? products.filter((item) => item.name.toLowerCase().includes(productName.toLowerCase())).slice(0, 5)
-    : [];
+  const productSuggestions = suggestions;
 
   const useCurrentLocation = () => {
     if (!navigator.geolocation) {

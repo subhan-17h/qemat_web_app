@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { Clock3, MapPin, Phone, Share2, Star } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 
 import { AppBar } from '@/components/navigation/AppBar';
@@ -10,13 +11,68 @@ import { Card } from '@/components/shared/Card';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { formatPKR, googleMapsQuery } from '@/lib/formatters';
 import { stores } from '@/lib/mock-data';
-import { useAppStore } from '@/store/app-store';
+import { fetchProductsPage } from '@/lib/api';
+import { Product } from '@/types/product';
+
+const PAGE_SIZE = 80;
 
 export default function StoreProfilePage() {
   const params = useParams<{ storeId: string }>();
-  const { products } = useAppStore();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [offset, setOffset] = useState(0);
+  const [total, setTotal] = useState(0);
 
   const store = stores.find((item) => item.id === decodeURIComponent(params.storeId));
+
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      if (!store) return;
+      setLoading(true);
+      try {
+        const response = await fetchProductsPage({
+          type: 'grocery',
+          store: store.id,
+          limit: PAGE_SIZE,
+          offset: 0,
+          sort: 'nameAsc'
+        });
+        if (active) {
+          setProducts(response.products);
+          setOffset(response.products.length);
+          setTotal(response.total);
+        }
+      } catch (error) {
+        console.error('Failed to load store products.', error);
+        if (active) {
+          setProducts([]);
+          setTotal(0);
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+
+    void load();
+    return () => {
+      active = false;
+    };
+  }, [store]);
+
+  const loadMore = async () => {
+    if (!store) return;
+    const response = await fetchProductsPage({
+      type: 'grocery',
+      store: store.id,
+      limit: PAGE_SIZE,
+      offset,
+      sort: 'nameAsc'
+    });
+    setProducts((current) => [...current, ...response.products]);
+    setOffset(offset + response.products.length);
+    setTotal(response.total);
+  };
 
   if (!store) {
     return (
@@ -26,8 +82,6 @@ export default function StoreProfilePage() {
       </div>
     );
   }
-
-  const storeProducts = products.filter((item) => item.storeId === store.id);
 
   return (
     <div className="mx-auto w-full max-w-screen-xl px-4 pb-8 lg:px-8">
@@ -87,13 +141,26 @@ export default function StoreProfilePage() {
       <section className="mt-5">
         <h3 className="mb-3 text-lg font-bold text-gray-900">Products at {store.id}</h3>
         <Card className="space-y-2">
-          {storeProducts.map((product) => (
-            <Link key={product.productId} href={`/product/${product.productId}`} className="flex items-center justify-between rounded-xl px-2 py-2 hover:bg-gray-50">
-              <span className="text-sm text-gray-900">{product.name}</span>
-              <span className="font-semibold text-brand-700">{formatPKR(product.price)}</span>
-            </Link>
-          ))}
+          {loading ? (
+            <p className="px-2 py-3 text-sm text-gray-500">Loading products...</p>
+          ) : products.length ? (
+            products.map((product) => (
+              <Link key={product.productId} href={`/product/${product.productId}`} className="flex items-center justify-between rounded-xl px-2 py-2 hover:bg-gray-50">
+                <span className="text-sm text-gray-900">{product.name}</span>
+                <span className="font-semibold text-brand-700">{formatPKR(product.price)}</span>
+              </Link>
+            ))
+          ) : (
+            <p className="px-2 py-3 text-sm text-gray-500">No products found.</p>
+          )}
         </Card>
+        {!loading && products.length < total ? (
+          <div className="mt-3">
+            <Button variant="secondary" fullWidth onClick={loadMore}>
+              Load more
+            </Button>
+          </div>
+        ) : null}
       </section>
     </div>
   );

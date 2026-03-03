@@ -1,9 +1,8 @@
 'use client';
 
 import { Search, X } from 'lucide-react';
-import { useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useSearchParams } from 'next/navigation';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import { AppBar } from '@/components/navigation/AppBar';
 import { EmptyState } from '@/components/shared/EmptyState';
@@ -12,12 +11,16 @@ import { ProductCard } from '@/components/shared/ProductCard';
 import { SkeletonCard } from '@/components/shared/SkeletonCard';
 import { groceryCategories, storeIds } from '@/lib/mock-data';
 import { cn } from '@/lib/utils';
+import { fetchProductsPage, searchProductsPage } from '@/lib/api';
 import { useAppStore } from '@/store/app-store';
+import { Product } from '@/types/product';
+
+const PAGE_SIZE = 40;
 
 export default function SearchPage() {
   const router = useRouter();
   const params = useSearchParams();
-  const { products, loadingProducts, isFavorited, toggleFavorite } = useAppStore();
+  const { isFavorited, toggleFavorite } = useAppStore();
 
   const category = params.get('category');
   const pharma = params.get('pharma') === 'true';
@@ -26,45 +29,99 @@ export default function SearchPage() {
   const categoryTitle = category ? groceryCategories.find((item) => item.slug === category)?.name : null;
 
   const [query, setQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [selectedStore, setSelectedStore] = useState<(typeof storeIds)[number]>('All Stores');
   const [sortBy, setSortBy] = useState<'relevance' | 'priceAsc' | 'priceDesc' | 'nameAsc'>('relevance');
 
-  const filtered = useMemo(() => {
-    let list = products;
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [total, setTotal] = useState(0);
 
-    if (pharma) {
-      list = list.filter((item) => item.isPharma);
-    } else {
-      list = list.filter((item) => !item.isPharma);
-    }
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
-    if (category) {
-      list = list.filter((item) => item.category === category);
-    }
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(query.trim()), 250);
+    return () => clearTimeout(timer);
+  }, [query]);
 
-    if (selectedStore !== 'All Stores') {
-      list = list.filter((item) => item.storeId === selectedStore);
-    }
+  const type = pharma ? 'pharma' : 'grocery';
+  const storeFilter = selectedStore !== 'All Stores' ? selectedStore : undefined;
+  const categoryFilter = category ?? undefined;
 
-    if (query.trim()) {
-      const normalized = query.toLowerCase();
-      list = list.filter((item) => item.name.toLowerCase().includes(normalized));
-    }
+  const hasMore = products.length < total;
 
-    const sorted = [...list];
+  const loadPage = useCallback(
+    async (offset: number, append: boolean) => {
+      const fetcher = debouncedQuery
+        ? searchProductsPage({
+            type,
+            query: debouncedQuery,
+            limit: PAGE_SIZE,
+            offset,
+            store: storeFilter,
+            category: categoryFilter,
+            sort: sortBy
+          })
+        : fetchProductsPage({
+            type,
+            limit: PAGE_SIZE,
+            offset,
+            store: storeFilter,
+            category: categoryFilter,
+            sort: sortBy
+          });
 
-    if (sortBy === 'priceAsc') {
-      sorted.sort((a, b) => a.price - b.price);
-    } else if (sortBy === 'priceDesc') {
-      sorted.sort((a, b) => b.price - a.price);
-    } else if (sortBy === 'nameAsc') {
-      sorted.sort((a, b) => a.name.localeCompare(b.name));
-    }
+      const response = await fetcher;
+      setTotal(response.total);
+      setProducts((current) => (append ? [...current, ...response.products] : response.products));
+    },
+    [categoryFilter, debouncedQuery, sortBy, storeFilter, type]
+  );
 
-    return sorted;
-  }, [products, pharma, category, selectedStore, query, sortBy]);
+  useEffect(() => {
+    let active = true;
+    const run = async () => {
+      setLoading(true);
+      try {
+        await loadPage(0, false);
+      } catch (error) {
+        console.error('Failed to load products.', error);
+        if (active) {
+          setProducts([]);
+          setTotal(0);
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+    void run();
+    return () => {
+      active = false;
+    };
+  }, [type, storeFilter, categoryFilter, debouncedQuery, sortBy, loadPage]);
+
+  useEffect(() => {
+    if (!sentinelRef.current) return;
+    if (!hasMore || loadingMore || loading) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          setLoadingMore(true);
+          loadPage(products.length, true)
+            .catch((error) => console.error('Failed to load more products.', error))
+            .finally(() => setLoadingMore(false));
+        }
+      },
+      { rootMargin: '200px' }
+    );
+
+    observer.observe(sentinelRef.current);
+    return () => observer.disconnect();
+  }, [hasMore, loadingMore, loading, products.length, debouncedQuery, storeFilter, categoryFilter, sortBy, type, loadPage]);
 
   const closeSearch = () => {
     setSearchOpen(false);
@@ -83,6 +140,12 @@ export default function SearchPage() {
       router.push('/sign-in');
     }
   };
+
+  const emptyDescription = useMemo(() => {
+    if (category) return 'No products currently available in this category.';
+    if (debouncedQuery) return 'Try a different keyword or store filter.';
+    return 'No products available right now.';
+  }, [category, debouncedQuery]);
 
   return (
     <div className="mx-auto w-full max-w-screen-xl px-4 pb-6 lg:px-8">
@@ -105,15 +168,15 @@ export default function SearchPage() {
         }
       />
 
-      {loadingProducts ? (
+      {loading ? (
         <div className="grid grid-cols-2 gap-3 pt-3 md:grid-cols-3 lg:grid-cols-4">
           {Array.from({ length: 8 }).map((_, index) => (
             <SkeletonCard key={index} />
           ))}
         </div>
-      ) : filtered.length ? (
+      ) : products.length ? (
         <div className="grid grid-cols-2 gap-3 pt-3 md:grid-cols-3 lg:grid-cols-4">
-          {filtered.map((product) => (
+          {products.map((product) => (
             <ProductCard
               key={product.productId}
               product={product}
@@ -125,12 +188,17 @@ export default function SearchPage() {
           ))}
         </div>
       ) : (
-        <EmptyState
-          icon={<Search className="text-gray-300" size={48} />}
-          title="No products found"
-          description={category ? 'No products currently available in this category.' : 'Try a different keyword or store filter.'}
-        />
+        <EmptyState icon={<Search className="text-gray-300" size={48} />} title="No products found" description={emptyDescription} />
       )}
+
+      <div ref={sentinelRef} className="h-8" />
+      {loadingMore ? (
+        <div className="grid grid-cols-2 gap-3 pt-3 md:grid-cols-3 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <SkeletonCard key={`more-${index}`} />
+          ))}
+        </div>
+      ) : null}
 
       <button
         aria-label="Open search"

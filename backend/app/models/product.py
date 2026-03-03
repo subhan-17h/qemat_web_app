@@ -41,6 +41,8 @@ class ProductListResponse(BaseModel):
     total: int
     page: int = 1
     pages: int = 1
+    limit: Optional[int] = None
+    offset: Optional[int] = None
 
 
 class ProductWithMatchesResponse(BaseModel):
