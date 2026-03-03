@@ -12,11 +12,12 @@ import { useAppStore } from '@/store/app-store';
 
 export default function SignUpPage() {
   const router = useRouter();
-  const { signIn } = useAppStore();
+  const { signUp } = useAppStore();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   return (
     <div className="mx-auto w-full max-w-md px-4 pb-8">
@@ -34,17 +35,26 @@ export default function SignUpPage() {
         />
         <Button
           fullWidth
-          onClick={() => {
+          disabled={submitting}
+          onClick={async () => {
             if (!name || !email || !password) {
               alert('Please complete all fields.');
               return;
             }
 
-            signIn(name, email);
-            router.push('/');
+            try {
+              setSubmitting(true);
+              await signUp(name, email, password);
+              router.push('/');
+            } catch (error) {
+              const message = error instanceof Error ? error.message : 'Failed to create account.';
+              alert(message);
+            } finally {
+              setSubmitting(false);
+            }
           }}
         >
-          Create Account
+          {submitting ? 'Creating Account...' : 'Create Account'}
         </Button>
 
         <p className="text-center text-sm text-gray-600">

@@ -2,7 +2,8 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
-import { products } from '@/lib/mock-data';
+import { fetchAllProducts, fetchFavorites, signInWithBackend, signUpWithBackend, toggleFavoriteOnBackend } from '@/lib/api';
+import { products as fallbackProducts } from '@/lib/mock-data';
 import { Product } from '@/types/product';
 import { User } from '@/types/user';
 
@@ -11,7 +12,8 @@ interface AppStoreValue {
   loadingProducts: boolean;
   user: User | null;
   favorites: string[];
-  signIn: (name: string, email: string) => void;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (name: string, email: string, password: string) => Promise<void>;
   signOut: () => void;
   toggleFavorite: (productId: string) => Promise<void>;
   removeFavorite: (productId: string) => Promise<void>;
@@ -21,28 +23,71 @@ interface AppStoreValue {
 const AppStoreContext = createContext<AppStoreValue | null>(null);
 
 export function AppStoreProvider({ children }: { children: ReactNode }) {
+  const [products, setProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [user, setUser] = useState<User | null>(null);
   const [favorites, setFavorites] = useState<string[]>([]);
 
   useEffect(() => {
     const userRaw = localStorage.getItem('qemat-user');
-    const favoritesRaw = localStorage.getItem('qemat-favorites');
 
     if (userRaw) {
       setUser(JSON.parse(userRaw) as User);
     }
-
-    if (favoritesRaw) {
-      setFavorites(JSON.parse(favoritesRaw) as string[]);
-    }
-
-    const timer = setTimeout(() => {
-      setLoadingProducts(false);
-    }, 650);
-
-    return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadProducts = async () => {
+      setLoadingProducts(true);
+      try {
+        const backendProducts = await fetchAllProducts();
+        if (active) {
+          setProducts(backendProducts);
+        }
+      } catch (error) {
+        console.error('Failed to load products from backend. Falling back to local mock data.', error);
+        if (active) {
+          setProducts(fallbackProducts);
+        }
+      } finally {
+        if (active) {
+          setLoadingProducts(false);
+        }
+      }
+    };
+
+    void loadProducts();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadFavorites = async () => {
+      if (!user?.token) {
+        setFavorites([]);
+        return;
+      }
+
+      try {
+        const favoriteIds = await fetchFavorites(user.token);
+        if (active) {
+          setFavorites(favoriteIds);
+        }
+      } catch (error) {
+        console.error('Failed to load favorites from backend.', error);
+      }
+    };
+
+    void loadFavorites();
+    return () => {
+      active = false;
+    };
+  }, [user]);
 
   useEffect(() => {
     if (user) {
@@ -56,14 +101,23 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('qemat-favorites', JSON.stringify(favorites));
   }, [favorites]);
 
-  const signIn = useCallback((name: string, email: string) => {
-    const next: User = {
-      uid: crypto.randomUUID(),
-      name,
-      email
-    };
+  const signIn = useCallback(async (email: string, password: string) => {
+    const nextUser = await signInWithBackend(email, password);
+    setUser(nextUser);
 
-    setUser(next);
+    try {
+      const favoriteIds = await fetchFavorites(nextUser.token);
+      setFavorites(favoriteIds);
+    } catch (error) {
+      console.error('Failed to sync favorites after sign-in.', error);
+      setFavorites([]);
+    }
+  }, []);
+
+  const signUp = useCallback(async (name: string, email: string, password: string) => {
+    const nextUser = await signUpWithBackend(name, email, password);
+    setUser(nextUser);
+    setFavorites([]);
   }, []);
 
   const signOut = useCallback(() => {
@@ -73,27 +127,44 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
 
   const toggleFavorite = useCallback(
     async (productId: string) => {
-      if (!user) {
+      if (!user?.token) {
         throw new Error('AUTH_REQUIRED');
       }
 
+      const wasFavorited = favorites.includes(productId);
       setFavorites((current) => {
-        if (current.includes(productId)) {
+        if (wasFavorited) {
           return current.filter((id) => id !== productId);
         }
 
-        return [...current, productId];
+        return [...new Set([...current, productId])];
       });
 
-      await new Promise((resolve) => setTimeout(resolve, 250));
+      try {
+        await toggleFavoriteOnBackend(user.token, productId);
+      } catch (error) {
+        setFavorites((current) => {
+          if (wasFavorited) {
+            return [...new Set([...current, productId])];
+          }
+
+          return current.filter((id) => id !== productId);
+        });
+        throw error;
+      }
     },
-    [user]
+    [favorites, user]
   );
 
-  const removeFavorite = useCallback(async (productId: string) => {
-    setFavorites((current) => current.filter((id) => id !== productId));
-    await new Promise((resolve) => setTimeout(resolve, 250));
-  }, []);
+  const removeFavorite = useCallback(
+    async (productId: string) => {
+      if (!favorites.includes(productId)) {
+        return;
+      }
+      await toggleFavorite(productId);
+    },
+    [favorites, toggleFavorite]
+  );
 
   const isFavorited = useCallback(
     (productId: string) => favorites.includes(productId),
@@ -107,12 +178,13 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       user,
       favorites,
       signIn,
+      signUp,
       signOut,
       toggleFavorite,
       removeFavorite,
       isFavorited
     }),
-    [favorites, isFavorited, loadingProducts, removeFavorite, signIn, signOut, toggleFavorite, user]
+    [favorites, isFavorited, loadingProducts, products, removeFavorite, signIn, signOut, signUp, toggleFavorite, user]
   );
 
   return <AppStoreContext.Provider value={value}>{children}</AppStoreContext.Provider>;

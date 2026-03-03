@@ -16,6 +16,7 @@ export default function SignInPage() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   return (
     <div className="mx-auto w-full max-w-md px-4 pb-8">
@@ -32,25 +33,34 @@ export default function SignInPage() {
         />
         <Button
           fullWidth
-          onClick={() => {
+          disabled={submitting}
+          onClick={async () => {
             if (!email || !password) {
               alert('Please enter email and password.');
               return;
             }
 
-            signIn('Qemat User', email);
-            router.push('/');
+            try {
+              setSubmitting(true);
+              await signIn(email, password);
+              router.push('/');
+            } catch (error) {
+              const message = error instanceof Error ? error.message : 'Failed to sign in.';
+              alert(message);
+            } finally {
+              setSubmitting(false);
+            }
           }}
         >
-          Sign In
+          {submitting ? 'Signing In...' : 'Sign In'}
         </Button>
 
         <Button
           variant="secondary"
           fullWidth
+          disabled
           onClick={() => {
-            signIn('Google User', email || 'google-user@qemat.app');
-            router.push('/');
+            alert('Google sign-in for web is not configured yet.');
           }}
         >
           Continue with Google

@@ -12,7 +12,22 @@ Next.js 14 frontend implementation based on `WEB_APP_PROMPT.md` from the Flutter
 
 ```bash
 npm install
+cp .env.example .env.local
 npm run dev
+```
+
+Set `NEXT_PUBLIC_API_BASE_URL` in `.env.local` if your backend is not running at `http://localhost:8000`.
+
+## Backend Integration
+- Product listing/search/trending data is fetched from the Python backend (`/api/products`).
+- Sign-in/sign-up uses backend auth (`/api/auth/login`, `/api/auth/register`).
+- Favorites are synced through backend favorites APIs (`/api/favorites`).
+
+## Validation Commands
+```bash
+npm run lint
+npm run typecheck
+npm run build
 ```
 
 ## Key Features Implemented
@@ -20,5 +35,5 @@ npm run dev
 - Mobile bottom nav + desktop sidebar
 - All requested primary routes/screens
 - Shared reusable UI components
-- Mock data and interactive frontend state for products, favorites, and assistant
-- Basic sign-in/sign-up and auth-gated UX flows
+- Backend API integration for products/auth/favorites (with mock-data fallback for product loading)
+- Auth-gated UX flows for favorites and assistant

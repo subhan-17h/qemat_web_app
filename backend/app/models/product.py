@@ -71,8 +71,15 @@ def parse_product_from_raw(data: dict, doc_id: str = "") -> Product:
     """Parse a product from Firestore document or bundle JSON."""
     import re
 
+    def _safe_str(value) -> str:
+        if isinstance(value, str):
+            return value
+        if value is None:
+            return ""
+        return str(value)
+
     # Handle name field (product_name for pharma, name for grocery)
-    name = data.get("product_name") or data.get("name") or ""
+    name = _safe_str(data.get("product_name") or data.get("name"))
 
     # Parse price from various formats
     raw_price = data.get("price", 0)
@@ -105,15 +112,15 @@ def parse_product_from_raw(data: dict, doc_id: str = "") -> Product:
         variations = []
 
     return Product(
-        id=doc_id or data.get("document_id", ""),
-        product_id=data.get("product_id", ""),
+        id=_safe_str(doc_id or data.get("document_id")),
+        product_id=_safe_str(data.get("product_id")),
         name=name,
         price=price,
-        store_id=data.get("store_id", ""),
-        category=data.get("category", ""),
+        store_id=_safe_str(data.get("store_id")),
+        category=_safe_str(data.get("category")),
         category_name_variations=[str(v) for v in variations],
-        image_url=data.get("image_url", ""),
-        original_url=data.get("original_url", ""),
+        image_url=_safe_str(data.get("image_url")),
+        original_url=_safe_str(data.get("original_url")),
         is_verified=data.get("is_verified", False),
         matched_product_ids=matched_ids,
         matched_products_count=int(data.get("matched_products_count", 0)),
