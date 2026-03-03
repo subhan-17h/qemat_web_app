@@ -22,7 +22,8 @@ cp .env.example .env
 # Set FIREBASE_WEB_API_KEY if you want server-side email/password login
 
 # 5. Run the server
-uvicorn app.main:app --reload --port 8000
+source venv/bin/activate
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
 ## API Docs
