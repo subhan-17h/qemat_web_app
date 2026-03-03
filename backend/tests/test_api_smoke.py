@@ -137,6 +137,11 @@ def client(monkeypatch: pytest.MonkeyPatch, sample_products: tuple[Product, Prod
 
     # Prevent real Firebase initialization during app lifespan.
     monkeypatch.setattr(main_mod, "init_firebase", lambda: None)
+    async def _noop_async():
+        return None
+
+    monkeypatch.setattr(main_mod, "init_db", _noop_async)
+    monkeypatch.setattr(main_mod, "close_pool", _noop_async)
     monkeypatch.setattr(favorites_router, "get_firestore_client", lambda: fake_db)
 
     async def mock_fetch_bundle_metadata(product_type: str = "grocery"):

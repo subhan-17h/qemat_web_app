@@ -1,17 +1,24 @@
 from __future__ import annotations
 
-import asyncpg
-from typing import Optional
+from typing import Optional, TYPE_CHECKING, Any
 
 from app.config import get_settings
 
-_pool: Optional[asyncpg.Pool] = None
+if TYPE_CHECKING:
+    import asyncpg
+
+_pool: Optional["asyncpg.Pool"] = None
 
 
-async def get_pool() -> asyncpg.Pool:
+async def get_pool() -> "asyncpg.Pool":
     global _pool
     if _pool is not None:
         return _pool
+
+    try:
+        import asyncpg  # type: ignore
+    except Exception as exc:  # pragma: no cover
+        raise RuntimeError("asyncpg is required for database access") from exc
 
     settings = get_settings()
     if not settings.database_url:
