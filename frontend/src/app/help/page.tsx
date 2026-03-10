@@ -126,15 +126,25 @@ export default function HelpPage() {
           const open = openIndex === index;
 
           return (
-            <Card key={faq.question} className="rounded-2xl border border-gray-200/80 bg-white p-0">
+            <Card
+              key={faq.question}
+              className="faq-card rounded-2xl border border-gray-200/80 bg-white p-0"
+              style={{ '--faq-delay': `${index * 50}ms` } as CSSProperties}
+            >
               <button
-                className="flex w-full items-center justify-between gap-2 px-4 py-3 text-left"
+                className={`faq-trigger flex w-full items-center justify-between gap-2 rounded-2xl px-4 py-3 text-left ${open ? 'faq-trigger-open' : ''}`}
                 onClick={() => setOpenIndex(open ? -1 : index)}
               >
                 <span className="font-semibold text-gray-900">{faq.question}</span>
-                <ChevronDown className={`transition-transform ${open ? 'rotate-180' : ''}`} size={16} />
+                <span className={`faq-chevron-wrap ${open ? 'faq-chevron-wrap-open' : ''}`}>
+                  <ChevronDown className={`faq-chevron ${open ? 'rotate-180' : ''}`} size={16} />
+                </span>
               </button>
-              {open ? <p className="px-4 pb-4 text-sm leading-relaxed text-gray-700">{faq.answer}</p> : null}
+              <div className={`faq-answer-grid ${open ? 'faq-answer-grid-open' : ''}`}>
+                <p className={`faq-answer-content px-4 pb-4 text-sm leading-relaxed text-gray-700 ${open ? 'faq-answer-content-open' : ''}`}>
+                  {faq.answer}
+                </p>
+              </div>
             </Card>
           );
         })}
@@ -161,11 +171,121 @@ export default function HelpPage() {
           }
         }
 
+        .faq-card {
+          opacity: 0;
+          transform: translateY(10px) scale(0.992);
+          animation: faq-card-in 460ms cubic-bezier(0.2, 0.88, 0.22, 1) forwards;
+          animation-delay: var(--faq-delay, 0ms);
+          transition:
+            border-color 260ms ease,
+            box-shadow 320ms cubic-bezier(0.2, 0.9, 0.2, 1),
+            transform 320ms cubic-bezier(0.2, 0.9, 0.2, 1);
+        }
+
+        .faq-card:hover {
+          border-color: rgba(16, 185, 129, 0.35);
+          box-shadow: 0 12px 28px -24px rgba(15, 23, 42, 0.45);
+          transform: translateY(-1px);
+        }
+
+        .faq-trigger {
+          transition:
+            background-color 260ms ease,
+            color 220ms ease;
+        }
+
+        .faq-trigger-open {
+          background: linear-gradient(180deg, rgba(236, 253, 245, 0.65) 0%, rgba(255, 255, 255, 0.96) 100%);
+        }
+
+        .faq-chevron-wrap {
+          display: grid;
+          place-items: center;
+          height: 1.75rem;
+          width: 1.75rem;
+          border-radius: 9999px;
+          background: rgba(243, 244, 246, 0.9);
+          color: rgb(75, 85, 99);
+          transition:
+            background-color 260ms ease,
+            color 260ms ease,
+            transform 260ms cubic-bezier(0.2, 0.9, 0.2, 1);
+        }
+
+        .faq-chevron-wrap-open {
+          background: rgba(16, 185, 129, 0.14);
+          color: rgb(5, 150, 105);
+          transform: scale(1.05);
+        }
+
+        .faq-chevron {
+          transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .faq-answer-grid {
+          display: grid;
+          grid-template-rows: 0fr;
+          transition: grid-template-rows 360ms cubic-bezier(0.2, 0.88, 0.22, 1);
+        }
+
+        .faq-answer-grid-open {
+          grid-template-rows: 1fr;
+        }
+
+        .faq-answer-content {
+          overflow: hidden;
+          opacity: 0;
+          transform: translateY(-6px);
+          transition:
+            opacity 280ms ease,
+            transform 320ms cubic-bezier(0.2, 0.88, 0.22, 1);
+        }
+
+        .faq-answer-content-open {
+          opacity: 1;
+          transform: translateY(0);
+          transition-delay: 85ms;
+        }
+
+        @keyframes faq-card-in {
+          0% {
+            opacity: 0;
+            transform: translateY(10px) scale(0.992);
+            filter: blur(7px);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            filter: blur(0);
+          }
+        }
+
         @media (prefers-reduced-motion: reduce) {
           .section-enter {
             opacity: 1;
             transform: none;
             animation: none;
+          }
+
+          .faq-card {
+            opacity: 1;
+            transform: none;
+            animation: none;
+            transition: none;
+          }
+
+          .faq-trigger,
+          .faq-chevron-wrap,
+          .faq-chevron,
+          .faq-answer-grid,
+          .faq-answer-content,
+          .faq-answer-content-open {
+            transition: none;
+          }
+
+          .faq-answer-content {
+            opacity: 1;
+            transform: none;
           }
         }
       `}</style>

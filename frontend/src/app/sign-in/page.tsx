@@ -4,32 +4,13 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { ArrowRight, Lock, Mail, ShieldCheck, Sparkles, Star } from 'lucide-react';
-import type { CSSProperties } from 'react';
+import { ArrowRight, Lock, Mail } from 'lucide-react';
 
 import { AppBar } from '@/components/navigation/AppBar';
 import { Button } from '@/components/shared/Button';
 import { Card } from '@/components/shared/Card';
 import { Input } from '@/components/shared/Input';
 import { useAppStore } from '@/store/app-store';
-
-const signInBenefits = [
-  {
-    icon: Star,
-    title: 'Personalized Experience',
-    body: 'Keep your favorite products and quickly revisit frequent searches.'
-  },
-  {
-    icon: Sparkles,
-    title: 'Smarter Savings',
-    body: 'Get better compare flow with synced data across your sessions.'
-  },
-  {
-    icon: ShieldCheck,
-    title: 'Secure Access',
-    body: 'Use email/password or Google sign-in with modern authentication.'
-  }
-];
 
 export default function SignInPage() {
   const router = useRouter();
@@ -41,13 +22,13 @@ export default function SignInPage() {
   const [googleSubmitting, setGoogleSubmitting] = useState(false);
 
   return (
-    <div className="relative mx-auto min-h-full w-full max-w-md overflow-hidden px-4 pb-8">
+    <div className="relative mx-auto min-h-full w-full max-w-md overflow-hidden px-4 pb-4">
       <div className="pointer-events-none absolute -left-12 -top-16 h-44 w-44 rounded-full bg-emerald-200/50 blur-2xl" />
       <div className="pointer-events-none absolute -right-10 top-24 h-36 w-36 rounded-full bg-sky-200/50 blur-2xl" />
 
       <AppBar title="Sign In" showBack sticky />
 
-      <Card className="relative mt-5 overflow-hidden rounded-[1.75rem] border border-white/65 bg-white/85 p-5 shadow-[0_24px_42px_-32px_rgba(15,23,42,0.45)] backdrop-blur-xl">
+      <Card className="relative mt-4 overflow-hidden rounded-[1.75rem] border border-white/65 bg-white/85 p-4 shadow-[0_24px_42px_-32px_rgba(15,23,42,0.45)] backdrop-blur-xl">
         <div className="mb-4">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">Welcome Back</p>
           <h1 className="mt-1 text-2xl font-bold text-gray-900">Sign in to Qemat</h1>
@@ -143,56 +124,6 @@ export default function SignInPage() {
         </p>
       </Card>
 
-      <section className="mt-4 space-y-2">
-        <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">Why Sign In</h2>
-        {signInBenefits.map((benefit, index) => (
-          <Card
-            key={benefit.title}
-            className="sign-info-enter rounded-2xl border border-gray-200/80 bg-white/90 p-3.5"
-            style={{ '--benefit-delay': `${index * 60}ms` } as CSSProperties}
-          >
-            <div className="flex items-start gap-2.5">
-              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-gray-100 text-gray-700">
-                <benefit.icon size={15} />
-              </span>
-              <div>
-                <h3 className="text-sm font-semibold text-gray-900">{benefit.title}</h3>
-                <p className="mt-0.5 text-xs leading-relaxed text-gray-600">{benefit.body}</p>
-              </div>
-            </div>
-          </Card>
-        ))}
-      </section>
-
-      <style jsx>{`
-        .sign-info-enter {
-          opacity: 0;
-          transform: translateY(12px) scale(0.99);
-          animation: sign-info-in 520ms cubic-bezier(0.2, 0.88, 0.22, 1) forwards;
-          animation-delay: var(--benefit-delay, 0ms);
-        }
-
-        @keyframes sign-info-in {
-          0% {
-            opacity: 0;
-            transform: translateY(12px) scale(0.99);
-            filter: blur(7px);
-          }
-          100% {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-            filter: blur(0);
-          }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          .sign-info-enter {
-            opacity: 1;
-            transform: none;
-            animation: none;
-          }
-        }
-      `}</style>
     </div>
   );
 }

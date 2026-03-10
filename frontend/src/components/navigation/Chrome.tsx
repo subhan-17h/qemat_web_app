@@ -9,11 +9,12 @@ import { Sidebar } from '@/components/navigation/Sidebar';
 import { cn } from '@/lib/utils';
 
 const authRoutes = ['/sign-in', '/sign-up'];
+const mainNavRoutes = new Set(['/', '/favorites', '/ai-assistant', '/profile']);
 
 export function Chrome({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const hideNavigation = authRoutes.some((route) => pathname.startsWith(route));
-  const hideBottomNav = hideNavigation || pathname.startsWith('/search');
+  const showBottomNav = !hideNavigation && mainNavRoutes.has(pathname);
 
   useEffect(() => {
     const updateViewportVars = () => {
@@ -51,13 +52,19 @@ export function Chrome({ children }: { children: ReactNode }) {
         <main
           className={cn(
             'w-full lg:pb-0',
-            pathname === '/' ? 'overflow-hidden pb-16' : pathname.startsWith('/search') ? 'app-scroll pb-8' : 'app-scroll pb-28'
+            pathname === '/'
+              ? 'overflow-hidden pb-16'
+              : pathname.startsWith('/search')
+                ? 'app-scroll pb-8'
+                : showBottomNav
+                  ? 'app-scroll pb-28'
+                  : 'app-scroll pb-8'
           )}
         >
           {children}
         </main>
       </div>
-      {!hideBottomNav ? <BottomNav /> : null}
+      {showBottomNav ? <BottomNav /> : null}
     </>
   );
 }
