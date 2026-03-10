@@ -3,13 +3,13 @@
 import { Heart, Share2, Store, Trophy } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import Image from 'next/image';
 
 import { AppBar } from '@/components/navigation/AppBar';
 import { BottomSheet } from '@/components/shared/BottomSheet';
 import { Button } from '@/components/shared/Button';
 import { Card } from '@/components/shared/Card';
 import { EmptyState } from '@/components/shared/EmptyState';
+import { SafeImage } from '@/components/shared/SafeImage';
 import { formatPKR, googleMapsQuery } from '@/lib/formatters';
 import { fetchProductWithMatches } from '@/lib/api';
 import { useAppStore } from '@/store/app-store';
@@ -188,7 +188,14 @@ export default function ProductDetailsPage() {
             </div>
 
             <div className="relative mx-auto h-52 w-full max-w-[200px] bg-white">
-              <Image src={product.imageUrl} alt={product.name} fill className="object-contain" />
+              <SafeImage
+                src={product.imageUrl}
+                alt={product.name}
+                fill
+                className="object-contain"
+                fallbackClassName="bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100"
+                iconClassName="h-8 w-8 text-slate-400"
+              />
             </div>
             <div className="mt-3 space-y-1 px-1">
               <h2 className="text-center text-lg font-bold text-gray-900">{product.name}</h2>
@@ -234,7 +241,14 @@ export default function ProductDetailsPage() {
                       onClick={() => window.open(googleMapsQuery(item.storeId), '_blank')}
                     >
                       <div className="relative h-12 w-12 overflow-hidden rounded-lg bg-white">
-                        <Image src={item.imageUrl} alt={item.name} fill className="object-contain" />
+                        <SafeImage
+                          src={item.imageUrl}
+                          alt={item.name}
+                          fill
+                          className="object-contain"
+                          fallbackClassName="bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100"
+                          iconClassName="h-5 w-5 text-slate-400"
+                        />
                       </div>
                       <span className="flex-1">
                         <p className="text-sm font-semibold text-gray-900">{item.name}</p>

@@ -8,6 +8,7 @@ import { AppBar } from '@/components/navigation/AppBar';
 import { Button } from '@/components/shared/Button';
 import { Card } from '@/components/shared/Card';
 import { EmptyState } from '@/components/shared/EmptyState';
+import { SafeImage } from '@/components/shared/SafeImage';
 import { formatPKR } from '@/lib/formatters';
 import { fetchFavoriteProducts, fetchProductWithMatches } from '@/lib/api';
 import { useAppStore } from '@/store/app-store';
@@ -153,9 +154,15 @@ export default function AIAssistantPage() {
 
           {rows.map((row) => (
             <Card key={row.productId} className="flex items-center gap-3">
-              <div className="h-12 w-12 overflow-hidden rounded-lg bg-gray-100">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={row.imageUrl} alt={row.name} className="h-full w-full object-cover" />
+              <div className="relative h-12 w-12 overflow-hidden rounded-lg bg-gray-100">
+                <SafeImage
+                  src={row.imageUrl}
+                  alt={row.name}
+                  fill
+                  className="object-cover"
+                  fallbackClassName="bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100"
+                  iconClassName="h-4 w-4 text-slate-400"
+                />
               </div>
               <div className="flex-1">
                 <p className="text-sm font-semibold text-gray-900">{row.name}</p>

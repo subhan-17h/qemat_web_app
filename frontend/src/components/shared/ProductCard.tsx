@@ -1,11 +1,11 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import { BadgeCheck, Heart } from 'lucide-react';
 
 import { Button } from '@/components/shared/Button';
 import { Card } from '@/components/shared/Card';
+import { SafeImage } from '@/components/shared/SafeImage';
 import { formatPKR } from '@/lib/formatters';
 import { cn } from '@/lib/utils';
 import { Product } from '@/types/product';
@@ -38,12 +38,14 @@ export function ProductCard({
         )}
       >
         <div className="relative h-28 w-full">
-          <Image
+          <SafeImage
             src={product.imageUrl}
             alt={product.name}
             fill
             loading="lazy"
             className="object-contain"
+            fallbackClassName="bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100"
+            iconClassName="h-6 w-6 text-slate-400"
             sizes="(max-width: 768px) 50vw, 25vw"
           />
           {showFavorite ? (
@@ -80,12 +82,14 @@ export function ProductCard({
   return (
     <Card className={cn('overflow-hidden p-0', className)}>
       <div className={cn('relative w-full', compact ? 'h-24' : 'h-32')}>
-        <Image
+        <SafeImage
           src={product.imageUrl}
           alt={product.name}
           fill
           loading="lazy"
           className={cn(homePopular ? 'object-contain' : compact ? 'object-cover' : 'object-cover')}
+          fallbackClassName="bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100"
+          iconClassName="h-6 w-6 text-slate-400"
           sizes="(max-width: 768px) 50vw, 25vw"
         />
         {showFavorite ? (
