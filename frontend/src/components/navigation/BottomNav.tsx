@@ -3,7 +3,7 @@
 import type { CSSProperties } from 'react';
 import Link from 'next/link';
 import { Bot, Heart, Home, User } from 'lucide-react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 
 import { cn } from '@/lib/utils';
 
@@ -16,6 +16,7 @@ const items = [
 
 export function BottomNav() {
   const pathname = usePathname();
+  const router = useRouter();
   const activeIndex = Math.max(
     items.findIndex((item) => (item.href === '/' ? pathname === '/' : pathname.startsWith(item.href))),
     0
@@ -33,7 +34,7 @@ export function BottomNav() {
               <span className="bottom-nav-pill" />
             </span>
             <ul className="relative z-10 grid grid-cols-4 gap-0 p-0.5">
-              {items.map((item) => {
+              {items.map((item, index) => {
                 const active = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
                 const Icon = item.icon;
 
@@ -41,6 +42,25 @@ export function BottomNav() {
                   <li key={item.href}>
                     <Link
                       href={item.href}
+                      onClick={(event) => {
+                        if (active) {
+                          event.preventDefault();
+                          return;
+                        }
+
+                        const docWithTransition = document as Document & {
+                          startViewTransition?: (callback: () => void) => void;
+                        };
+
+                        if (docWithTransition.startViewTransition) {
+                          event.preventDefault();
+                          const direction = index > activeIndex ? 'right' : 'left';
+                          document.documentElement.setAttribute('data-tab-direction', direction);
+                          docWithTransition.startViewTransition(() => {
+                            router.push(item.href);
+                          });
+                        }
+                      }}
                       className={cn(
                         'group flex flex-col items-center gap-0.5 rounded-[1.15rem] px-1 py-1 text-[10px] font-semibold transition-all duration-300 ease-out',
                         active ? 'text-white' : 'text-gray-200/90 hover:text-white'
