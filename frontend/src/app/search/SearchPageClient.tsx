@@ -16,6 +16,7 @@ import { useAppStore } from '@/store/app-store';
 import { Product } from '@/types/product';
 
 const PAGE_SIZE = 40;
+const SHEET_EXIT_MS = 240;
 
 function SearchShimmerGrid({ count, prefix }: { count: number; prefix: string }) {
   return (
@@ -55,7 +56,11 @@ export default function SearchPage() {
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
+  const [searchClosing, setSearchClosing] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [filtersClosing, setFiltersClosing] = useState(false);
+  const [searchFabBurst, setSearchFabBurst] = useState(false);
+  const [filterTriggerBurst, setFilterTriggerBurst] = useState(false);
   const [selectedStore, setSelectedStore] = useState<(typeof storeIds)[number]>('All Stores');
   const [sortBy, setSortBy] = useState<'relevance' | 'matchPriority' | 'priceAsc' | 'priceDesc' | 'nameAsc'>('matchPriority');
 
@@ -68,11 +73,24 @@ export default function SearchPage() {
   const productCardRefs = useRef(new Map<string, HTMLDivElement>());
   const visibleProductCards = useRef(new Set<HTMLDivElement>());
   const parallaxFrame = useRef<number | null>(null);
+  const searchCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const filtersCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchFabTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const filterTriggerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(query.trim()), 250);
     return () => clearTimeout(timer);
   }, [query]);
+
+  useEffect(() => {
+    return () => {
+      if (searchCloseTimerRef.current) clearTimeout(searchCloseTimerRef.current);
+      if (filtersCloseTimerRef.current) clearTimeout(filtersCloseTimerRef.current);
+      if (searchFabTimerRef.current) clearTimeout(searchFabTimerRef.current);
+      if (filterTriggerTimerRef.current) clearTimeout(filterTriggerTimerRef.current);
+    };
+  }, []);
 
   const type = pharma ? 'pharma' : 'grocery';
   const storeFilter = selectedStore !== 'All Stores' ? selectedStore : undefined;
@@ -250,14 +268,62 @@ export default function SearchPage() {
     };
   }, [loading, products.length, queueParallaxUpdate]);
 
-  const closeSearch = () => {
-    setSearchOpen(false);
+  const blurActiveElement = () => {
     if (typeof document !== 'undefined') {
       const active = document.activeElement;
       if (active instanceof HTMLElement) {
         active.blur();
       }
     }
+  };
+
+  const openSearch = () => {
+    if (searchFabTimerRef.current) clearTimeout(searchFabTimerRef.current);
+    setSearchFabBurst(true);
+    searchFabTimerRef.current = setTimeout(() => setSearchFabBurst(false), 420);
+
+    if (searchCloseTimerRef.current) {
+      clearTimeout(searchCloseTimerRef.current);
+      searchCloseTimerRef.current = null;
+    }
+    setSearchClosing(false);
+    setSearchOpen(true);
+  };
+
+  const closeSearch = () => {
+    if (!searchOpen || searchClosing) return;
+    setSearchClosing(true);
+    if (searchCloseTimerRef.current) clearTimeout(searchCloseTimerRef.current);
+    searchCloseTimerRef.current = setTimeout(() => {
+      setSearchOpen(false);
+      setSearchClosing(false);
+      blurActiveElement();
+      searchCloseTimerRef.current = null;
+    }, SHEET_EXIT_MS);
+  };
+
+  const openFilters = () => {
+    if (filterTriggerTimerRef.current) clearTimeout(filterTriggerTimerRef.current);
+    setFilterTriggerBurst(true);
+    filterTriggerTimerRef.current = setTimeout(() => setFilterTriggerBurst(false), 420);
+
+    if (filtersCloseTimerRef.current) {
+      clearTimeout(filtersCloseTimerRef.current);
+      filtersCloseTimerRef.current = null;
+    }
+    setFiltersClosing(false);
+    setFiltersOpen(true);
+  };
+
+  const closeFilters = () => {
+    if (!filtersOpen || filtersClosing) return;
+    setFiltersClosing(true);
+    if (filtersCloseTimerRef.current) clearTimeout(filtersCloseTimerRef.current);
+    filtersCloseTimerRef.current = setTimeout(() => {
+      setFiltersOpen(false);
+      setFiltersClosing(false);
+      filtersCloseTimerRef.current = null;
+    }, SHEET_EXIT_MS);
   };
 
   const handleToggleFavorite = async (productId: string) => {
@@ -283,8 +349,11 @@ export default function SearchPage() {
         rightAction={
           <button
             aria-label="Open filters"
-            onClick={() => setFiltersOpen(true)}
-            className="grid h-9 w-9 place-items-center rounded-full border border-black/20 bg-white/80 text-black backdrop-blur-xl"
+            onClick={openFilters}
+            className={cn(
+              'search-filter-trigger grid h-9 w-9 place-items-center rounded-full border border-black/20 bg-white/80 text-black backdrop-blur-xl',
+              filterTriggerBurst ? 'search-filter-trigger-burst' : ''
+            )}
           >
             <span className="flex flex-col items-center gap-1">
               <span className="h-[2px] w-4 rounded-full bg-black/90" />
@@ -343,20 +412,32 @@ export default function SearchPage() {
 
       <button
         aria-label="Open search"
-        onClick={() => setSearchOpen(true)}
-        className="fixed bottom-6 right-5 z-40 grid h-16 w-16 place-items-center rounded-full border border-white/20 bg-black/20 text-black shadow-[inset_0_1px_0_rgba(255,255,255,0.35)] backdrop-blur-lg"
+        onClick={openSearch}
+        className={cn(
+          'search-fab fixed bottom-6 right-5 z-40 grid h-16 w-16 place-items-center rounded-full border border-white/20 bg-black/20 text-black shadow-[inset_0_1px_0_rgba(255,255,255,0.35)] backdrop-blur-lg',
+          searchFabBurst ? 'search-fab-burst' : ''
+        )}
       >
         <Search size={34} strokeWidth={2.2} />
       </button>
 
       {filtersOpen ? (
         <>
-          <div className="fixed inset-0 z-50 bg-black/12" onClick={() => setFiltersOpen(false)} />
+          <div
+            className={cn('filters-overlay fixed inset-0 z-50 bg-black/12', filtersClosing ? 'is-leaving' : '')}
+            onClick={closeFilters}
+          />
           <div className="fixed right-4 top-[4.25rem] z-[60] w-[calc(100%-2rem)] max-w-sm">
-            <div className="rounded-[1.35rem] border border-white/45 bg-white/24 p-3 backdrop-blur-2xl" onClick={(event) => event.stopPropagation()}>
+            <div
+              className={cn(
+                'filters-sheet rounded-[1.35rem] border border-white/45 bg-white/24 p-3 backdrop-blur-2xl',
+                filtersClosing ? 'is-leaving' : ''
+              )}
+              onClick={(event) => event.stopPropagation()}
+            >
               <div className="mb-3 flex items-center justify-between">
                 <p className="text-sm font-semibold text-gray-900">Filters & Sort</p>
-                <button aria-label="Close filters" onClick={() => setFiltersOpen(false)} className="rounded-full p-1 text-gray-700 hover:bg-white/30">
+                <button aria-label="Close filters" onClick={closeFilters} className="rounded-full p-1 text-gray-700 hover:bg-white/30">
                   <X size={14} />
                 </button>
               </div>
@@ -412,10 +493,15 @@ export default function SearchPage() {
 
       {searchOpen ? (
         <>
-          <div className="fixed inset-0 z-50 bg-black/12" onClick={closeSearch} />
+          <div className={cn('search-overlay fixed inset-0 z-50 bg-black/12', searchClosing ? 'is-leaving' : '')} onClick={closeSearch} />
           <div className="fixed left-1/2 top-[4.2rem] z-[60] w-[calc(100%-2rem)] max-w-xl -translate-x-1/2">
             <div onClick={(event) => event.stopPropagation()}>
-              <div className="flex items-center gap-2 rounded-full border border-white/35 bg-white/12 p-1.5 shadow-[0_12px_30px_rgba(15,23,42,0.12)] backdrop-blur-xl">
+              <div
+                className={cn(
+                  'search-command-sheet flex items-center gap-2 rounded-full border border-white/35 bg-white/12 p-1.5 shadow-[0_12px_30px_rgba(15,23,42,0.12)] backdrop-blur-xl',
+                  searchClosing ? 'is-leaving' : ''
+                )}
+              >
                 <Input
                   autoFocus
                   className="text-base"
@@ -448,6 +534,78 @@ export default function SearchPage() {
       <style jsx global>{`
         .search-scroll-grid {
           perspective: 1000px;
+        }
+
+        .search-fab {
+          transition:
+            transform 220ms cubic-bezier(0.2, 0.9, 0.22, 1),
+            background-color 200ms ease,
+            box-shadow 260ms ease;
+        }
+
+        .search-fab:hover {
+          transform: translateY(-1px) scale(1.02);
+          background-color: rgba(255, 255, 255, 0.28);
+          box-shadow:
+            0 12px 24px -16px rgba(15, 23, 42, 0.55),
+            inset 0 1px 0 rgba(255, 255, 255, 0.35);
+        }
+
+        .search-fab:active {
+          transform: scale(0.95);
+        }
+
+        .search-fab-burst {
+          animation: search-fab-burst 420ms cubic-bezier(0.2, 0.9, 0.22, 1);
+        }
+
+        .search-filter-trigger {
+          transition:
+            transform 220ms cubic-bezier(0.2, 0.9, 0.22, 1),
+            box-shadow 240ms ease,
+            background-color 200ms ease;
+        }
+
+        .search-filter-trigger:hover {
+          transform: translateY(-1px);
+          background-color: rgba(255, 255, 255, 0.95);
+          box-shadow: 0 8px 18px -12px rgba(15, 23, 42, 0.42);
+        }
+
+        .search-filter-trigger:active {
+          transform: scale(0.94);
+        }
+
+        .search-filter-trigger-burst {
+          animation: filter-trigger-burst 380ms cubic-bezier(0.2, 0.9, 0.22, 1);
+        }
+
+        .search-overlay,
+        .filters-overlay {
+          animation: floating-overlay-in 220ms ease forwards;
+        }
+
+        .search-overlay.is-leaving,
+        .filters-overlay.is-leaving {
+          animation: floating-overlay-out ${SHEET_EXIT_MS}ms ease forwards;
+        }
+
+        .search-command-sheet {
+          transform-origin: center top;
+          animation: search-command-in 420ms cubic-bezier(0.16, 0.96, 0.22, 1) forwards;
+        }
+
+        .search-command-sheet.is-leaving {
+          animation: search-command-out ${SHEET_EXIT_MS}ms cubic-bezier(0.32, 0.01, 0.67, 0.99) forwards;
+        }
+
+        .filters-sheet {
+          transform-origin: top right;
+          animation: filters-sheet-in 360ms cubic-bezier(0.16, 0.96, 0.22, 1) forwards;
+        }
+
+        .filters-sheet.is-leaving {
+          animation: filters-sheet-out ${SHEET_EXIT_MS}ms cubic-bezier(0.32, 0.01, 0.67, 0.99) forwards;
         }
 
         .search-scroll-card {
@@ -493,7 +651,129 @@ export default function SearchPage() {
           }
         }
 
+        @keyframes search-fab-burst {
+          0% {
+            transform: scale(1);
+          }
+          30% {
+            transform: scale(0.92);
+          }
+          62% {
+            transform: scale(1.08);
+          }
+          100% {
+            transform: scale(1);
+          }
+        }
+
+        @keyframes filter-trigger-burst {
+          0% {
+            transform: scale(1);
+          }
+          42% {
+            transform: scale(0.92);
+          }
+          100% {
+            transform: scale(1);
+          }
+        }
+
+        @keyframes floating-overlay-in {
+          0% {
+            opacity: 0;
+          }
+          100% {
+            opacity: 1;
+          }
+        }
+
+        @keyframes floating-overlay-out {
+          0% {
+            opacity: 1;
+          }
+          100% {
+            opacity: 0;
+          }
+        }
+
+        @keyframes search-command-in {
+          0% {
+            opacity: 0;
+            transform: translate3d(0, -16px, 0) scale(0.92);
+            filter: blur(10px);
+          }
+          60% {
+            opacity: 1;
+          }
+          100% {
+            opacity: 1;
+            transform: translate3d(0, 0, 0) scale(1);
+            filter: blur(0);
+          }
+        }
+
+        @keyframes search-command-out {
+          0% {
+            opacity: 1;
+            transform: translate3d(0, 0, 0) scale(1);
+            filter: blur(0);
+          }
+          100% {
+            opacity: 0;
+            transform: translate3d(0, -8px, 0) scale(0.96);
+            filter: blur(8px);
+          }
+        }
+
+        @keyframes filters-sheet-in {
+          0% {
+            opacity: 0;
+            transform: translate3d(14px, -10px, 0) scale(0.9);
+            filter: blur(10px);
+          }
+          100% {
+            opacity: 1;
+            transform: translate3d(0, 0, 0) scale(1);
+            filter: blur(0);
+          }
+        }
+
+        @keyframes filters-sheet-out {
+          0% {
+            opacity: 1;
+            transform: translate3d(0, 0, 0) scale(1);
+            filter: blur(0);
+          }
+          100% {
+            opacity: 0;
+            transform: translate3d(10px, -8px, 0) scale(0.94);
+            filter: blur(8px);
+          }
+        }
+
         @media (prefers-reduced-motion: reduce) {
+          .search-fab,
+          .search-fab:hover,
+          .search-fab:active,
+          .search-fab-burst,
+          .search-filter-trigger,
+          .search-filter-trigger:hover,
+          .search-filter-trigger:active,
+          .search-filter-trigger-burst,
+          .search-overlay,
+          .search-overlay.is-leaving,
+          .filters-overlay,
+          .filters-overlay.is-leaving,
+          .search-command-sheet,
+          .search-command-sheet.is-leaving,
+          .filters-sheet,
+          .filters-sheet.is-leaving {
+            animation: none;
+            transform: none;
+            transition: none;
+            filter: none;
+          }
+
           .search-scroll-card,
           .search-scroll-card[data-visible='true'] {
             opacity: 1;
