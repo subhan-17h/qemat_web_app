@@ -2,13 +2,15 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
-import { fetchFavorites, signInWithBackend, signUpWithBackend, toggleFavoriteOnBackend } from '@/lib/api';
+import { fetchFavorites, signInWithBackend, signInWithGoogleToken, signUpWithBackend, toggleFavoriteOnBackend } from '@/lib/api';
+import { getGoogleIdTokenForBackend } from '@/lib/firebase-client';
 import { User } from '@/types/user';
 
 interface AppStoreValue {
   user: User | null;
   favorites: string[];
   signIn: (email: string, password: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   signUp: (name: string, email: string, password: string) => Promise<void>;
   signOut: () => void;
   toggleFavorite: (productId: string) => Promise<void>;
@@ -80,6 +82,20 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const signInWithGoogle = useCallback(async () => {
+    const idToken = await getGoogleIdTokenForBackend();
+    const nextUser = await signInWithGoogleToken(idToken);
+    setUser(nextUser);
+
+    try {
+      const favoriteIds = await fetchFavorites(nextUser.token);
+      setFavorites(favoriteIds);
+    } catch (error) {
+      console.error('Failed to sync favorites after Google sign-in.', error);
+      setFavorites([]);
+    }
+  }, []);
+
   const signUp = useCallback(async (name: string, email: string, password: string) => {
     const nextUser = await signUpWithBackend(name, email, password);
     setUser(nextUser);
@@ -142,13 +158,14 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       user,
       favorites,
       signIn,
+      signInWithGoogle,
       signUp,
       signOut,
       toggleFavorite,
       removeFavorite,
       isFavorited
     }),
-    [favorites, isFavorited, removeFavorite, signIn, signOut, signUp, toggleFavorite, user]
+    [favorites, isFavorited, removeFavorite, signIn, signInWithGoogle, signOut, signUp, toggleFavorite, user]
   );
 
   return <AppStoreContext.Provider value={value}>{children}</AppStoreContext.Provider>;

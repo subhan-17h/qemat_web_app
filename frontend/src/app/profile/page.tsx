@@ -1,10 +1,9 @@
 'use client';
 
-import { ChevronRight, Gift, HelpCircle, Info, LogOut, Star, Trophy, UserCircle2 } from 'lucide-react';
+import { ChevronRight, Gift, HelpCircle, Info, LogOut, UserCircle2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 import { AppBar } from '@/components/navigation/AppBar';
-import { Badge } from '@/components/shared/Badge';
 import { Card } from '@/components/shared/Card';
 import { useAppStore } from '@/store/app-store';
 
@@ -29,29 +28,23 @@ export default function ProfilePage() {
         <p className="text-sm text-gray-500">{user?.email ?? 'Sign in to personalize your profile.'}</p>
       </Card>
 
-      <Card className="mx-auto mt-4 max-w-xl bg-gradient-to-br from-green-50 to-amber-50">
-        <h2 className="text-lg font-bold text-gray-900">Earn Rewards</h2>
-        <div className="mt-3 space-y-3">
-          <div className="flex items-center gap-3 rounded-xl bg-white/70 p-3">
-            <span className="grid h-10 w-10 place-items-center rounded-full bg-green-100 text-brand-700">
-              <Trophy size={18} />
-            </span>
-            <div className="flex-1">
-              <p className="font-semibold text-gray-900">Contribute Prices</p>
-              <p className="text-xs text-gray-600">Add/update prices at local stores, earn points.</p>
-            </div>
-            <Badge>Coming Soon</Badge>
-          </div>
-
-          <div className="flex items-center gap-3 rounded-xl bg-white/70 p-3">
-            <span className="grid h-10 w-10 place-items-center rounded-full bg-amber-100 text-amber-700">
-              <Star size={18} />
-            </span>
-            <div className="flex-1">
-              <p className="font-semibold text-gray-900">Verify Information</p>
-              <p className="text-xs text-gray-600">Confirm price accuracy and help the community.</p>
-            </div>
-            <Badge>Coming Soon</Badge>
+      <Card className="mx-auto mt-4 max-w-xl rounded-xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-teal-50 to-amber-50 p-3.5">
+        <span className="inline-flex rounded-full bg-emerald-200/60 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700">Coming Soon</span>
+        <div className="mt-2.5 flex items-start gap-2">
+          <span className="mt-0.5 text-emerald-600">
+            <Gift size={20} />
+          </span>
+          <div>
+            <h2 className="text-xl font-extrabold leading-tight text-gray-900">🎉 Earn Free Rewards!</h2>
+            <p className="mt-1.5 max-w-md text-sm font-medium leading-relaxed text-gray-500">
+              Make contributions and earn free mobile top-ups & rewards!
+            </p>
+            <button
+              className="mt-3 rounded-full border-2 border-emerald-500 px-4 py-1 text-sm font-bold text-emerald-600 transition-colors hover:bg-emerald-50"
+              onClick={() => router.push('/help')}
+            >
+              View How to Earn
+            </button>
           </div>
         </div>
       </Card>
@@ -86,9 +79,9 @@ export default function ProfilePage() {
               <ChevronRight size={16} />
             </button>
           ) : (
-            <button onClick={() => router.push('/sign-up')} className="flex w-full items-center gap-3 rounded-xl px-2 py-3 text-left hover:bg-gray-50">
+            <button onClick={() => router.push('/sign-in')} className="flex w-full items-center gap-3 rounded-xl px-2 py-3 text-left hover:bg-gray-50">
               <Gift className="text-gray-500" size={18} />
-              <span className="flex-1 text-base text-gray-900">Create Account</span>
+              <span className="flex-1 text-base text-gray-900">Sign In</span>
               <ChevronRight size={16} className="text-gray-400" />
             </button>
           )}

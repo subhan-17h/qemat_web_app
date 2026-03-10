@@ -247,6 +247,14 @@ export async function signUpWithBackend(name: string, email: string, password: s
   return buildUser(response.user, response.token, name);
 }
 
+export async function signInWithGoogleToken(idToken: string): Promise<User> {
+  const response = await request<AuthResponse>('/api/auth/google', {
+    method: 'POST',
+    body: JSON.stringify({ idToken })
+  });
+  return buildUser(response.user, response.token);
+}
+
 export async function fetchFavorites(token: string): Promise<string[]> {
   const response = await request<FavoritesResponse>('/api/favorites', {
     headers: {
