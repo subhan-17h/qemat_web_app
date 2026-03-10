@@ -157,12 +157,12 @@ export default function SearchPage() {
           <button
             aria-label="Open filters"
             onClick={() => setFiltersOpen(true)}
-            className="grid h-9 w-9 place-items-center rounded-full border border-white/30 bg-black/20 text-white backdrop-blur-xl"
+            className="grid h-9 w-9 place-items-center rounded-full border border-black/20 bg-white/80 text-black backdrop-blur-xl"
           >
             <span className="flex flex-col items-center gap-1">
-              <span className="h-[2px] w-4 rounded-full bg-white/90" />
-              <span className="h-[2px] w-5 rounded-full bg-white/90" />
-              <span className="h-[2px] w-3 rounded-full bg-white/90" />
+              <span className="h-[2px] w-4 rounded-full bg-black/90" />
+              <span className="h-[2px] w-5 rounded-full bg-black/90" />
+              <span className="h-[2px] w-3 rounded-full bg-black/90" />
             </span>
           </button>
         }
