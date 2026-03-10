@@ -2,6 +2,7 @@
 
 import { ChevronRight, Gift, HelpCircle, Info, LogOut, UserCircle2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { type MouseEvent } from 'react';
 
 import { AppBar } from '@/components/navigation/AppBar';
 import { Card } from '@/components/shared/Card';
@@ -11,9 +12,45 @@ export default function ProfilePage() {
   const router = useRouter();
   const { user, signOut } = useAppStore();
 
+  const handleProfileNavigation = (event: MouseEvent<HTMLElement>, href: string) => {
+    const isModifiedClick = event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0;
+    if (isModifiedClick) return;
+
+    const docWithTransition = document as Document & {
+      startViewTransition?: (callback: () => void) => { finished: Promise<void> };
+    };
+
+    if (!docWithTransition.startViewTransition) {
+      event.preventDefault();
+      router.push(href);
+      return;
+    }
+
+    event.preventDefault();
+    const root = document.documentElement;
+    const trigger = event.currentTarget as HTMLElement;
+    const rect = trigger.getBoundingClientRect();
+    const originX = `${((rect.left + rect.width / 2) / window.innerWidth) * 100}%`;
+    const originY = `${((rect.top + rect.height / 2) / window.innerHeight) * 100}%`;
+
+    root.setAttribute('data-nav-intent', 'profile-open');
+    root.style.setProperty('--vt-origin-x', originX);
+    root.style.setProperty('--vt-origin-y', originY);
+
+    const transition = docWithTransition.startViewTransition(() => {
+      router.push(href);
+    });
+
+    transition.finished.finally(() => {
+      root.removeAttribute('data-nav-intent');
+      root.style.removeProperty('--vt-origin-x');
+      root.style.removeProperty('--vt-origin-y');
+    });
+  };
+
   const settingsItems = [
-    { label: 'Help & Support', icon: HelpCircle, onClick: () => router.push('/help') },
-    { label: 'About', icon: Info, onClick: () => router.push('/about') }
+    { label: 'Help & Support', icon: HelpCircle, href: '/help' },
+    { label: 'About', icon: Info, href: '/about' }
   ];
 
   return (
@@ -41,7 +78,7 @@ export default function ProfilePage() {
             </p>
             <button
               className="mt-3 rounded-full border-2 border-emerald-500 px-4 py-1 text-sm font-bold text-emerald-600 transition-colors hover:bg-emerald-50"
-              onClick={() => router.push('/help')}
+              onClick={(event) => handleProfileNavigation(event, '/help')}
             >
               View How to Earn
             </button>
@@ -57,7 +94,7 @@ export default function ProfilePage() {
           {settingsItems.map((item) => (
             <button
               key={item.label}
-              onClick={item.onClick}
+              onClick={(event) => handleProfileNavigation(event, item.href)}
               className="flex w-full items-center gap-3 rounded-xl px-2 py-3 text-left hover:bg-gray-50"
             >
               <item.icon className="text-gray-500" size={18} />
@@ -79,7 +116,10 @@ export default function ProfilePage() {
               <ChevronRight size={16} />
             </button>
           ) : (
-            <button onClick={() => router.push('/sign-in')} className="flex w-full items-center gap-3 rounded-xl px-2 py-3 text-left hover:bg-gray-50">
+            <button
+              onClick={(event) => handleProfileNavigation(event, '/sign-in')}
+              className="flex w-full items-center gap-3 rounded-xl px-2 py-3 text-left hover:bg-gray-50"
+            >
               <Gift className="text-gray-500" size={18} />
               <span className="flex-1 text-base text-gray-900">Sign In</span>
               <ChevronRight size={16} className="text-gray-400" />
