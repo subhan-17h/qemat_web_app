@@ -8,7 +8,6 @@ import { AppBar } from '@/components/navigation/AppBar';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { Input } from '@/components/shared/Input';
 import { ProductCard } from '@/components/shared/ProductCard';
-import { SkeletonCard } from '@/components/shared/SkeletonCard';
 import { groceryCategories, storeIds } from '@/lib/mock-data';
 import { cn } from '@/lib/utils';
 import { fetchProductsPage, searchProductsPage } from '@/lib/api';
@@ -16,6 +15,30 @@ import { useAppStore } from '@/store/app-store';
 import { Product } from '@/types/product';
 
 const PAGE_SIZE = 40;
+
+function SearchShimmerGrid({ count, prefix }: { count: number; prefix: string }) {
+  return (
+    <div className="grid grid-cols-2 gap-3 pt-3 md:grid-cols-3 lg:grid-cols-4">
+      {Array.from({ length: count }).map((_, index) => (
+        <div
+          key={`${prefix}-${index}`}
+          className="h-[218px] overflow-hidden rounded-[1.3rem] border border-gray-200/70 bg-white p-0 shadow-[0_9px_14px_-11px_rgba(15,23,42,0.40)]"
+        >
+          <div className="search-modern-shimmer h-28 w-full" />
+          <div className="space-y-2 p-2.5">
+            <div className="search-modern-shimmer h-4 w-11/12 rounded-md" />
+            <div className="search-modern-shimmer h-4 w-8/12 rounded-md" />
+            <div className="search-modern-shimmer h-4 w-7/12 rounded-md" />
+            <div className="mt-1 flex items-center justify-between">
+              <div className="search-modern-shimmer h-4 w-16 rounded-md" />
+              <div className="search-modern-shimmer h-4 w-14 rounded-full" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function SearchPage() {
   const router = useRouter();
@@ -169,11 +192,7 @@ export default function SearchPage() {
       />
 
       {loading ? (
-        <div className="grid grid-cols-2 gap-3 pt-3 md:grid-cols-3 lg:grid-cols-4">
-          {Array.from({ length: 8 }).map((_, index) => (
-            <SkeletonCard key={index} />
-          ))}
-        </div>
+        <SearchShimmerGrid count={8} prefix="search-shimmer" />
       ) : products.length ? (
         <div className="grid grid-cols-2 gap-3 pt-3 md:grid-cols-3 lg:grid-cols-4">
           {products.map((product) => (
@@ -193,11 +212,7 @@ export default function SearchPage() {
 
       <div ref={sentinelRef} className="h-8" />
       {loadingMore ? (
-        <div className="grid grid-cols-2 gap-3 pt-3 md:grid-cols-3 lg:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, index) => (
-            <SkeletonCard key={`more-${index}`} />
-          ))}
-        </div>
+        <SearchShimmerGrid count={4} prefix="search-more-shimmer" />
       ) : null}
 
       <button
@@ -303,6 +318,31 @@ export default function SearchPage() {
           </div>
         </>
       ) : null}
+
+      <style jsx global>{`
+        .search-modern-shimmer {
+          position: relative;
+          overflow: hidden;
+          background: linear-gradient(110deg, #f3f4f6 10%, #ffffff 40%, #e5e7eb 60%, #f3f4f6 90%);
+          background-size: 220% 100%;
+          animation: search-modern-shimmer 1.4s linear infinite;
+        }
+
+        @keyframes search-modern-shimmer {
+          0% {
+            background-position: 120% 0;
+          }
+          100% {
+            background-position: -120% 0;
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .search-modern-shimmer {
+            animation: none;
+          }
+        }
+      `}</style>
     </div>
   );
 }
