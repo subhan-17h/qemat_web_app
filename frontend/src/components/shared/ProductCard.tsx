@@ -46,13 +46,19 @@ export function ProductCard({
             className="object-contain"
             sizes="(max-width: 768px) 50vw, 25vw"
           />
-          <button
-            aria-label="Toggle favorite"
-            onClick={onFavoriteToggle}
-            className="absolute right-2 top-2 grid h-9 w-9 place-items-center rounded-full border border-gray-200 bg-white text-gray-700 shadow-sm"
-          >
-            <Heart size={16} className={favorited ? 'fill-current text-red-600' : ''} />
-          </button>
+          {showFavorite ? (
+            <button
+              aria-label="Toggle favorite"
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                onFavoriteToggle?.();
+              }}
+              className="absolute right-2 top-2 grid h-9 w-9 place-items-center rounded-full border border-gray-200 bg-white text-gray-700 shadow-sm"
+            >
+              <Heart size={16} className={favorited ? 'fill-current text-red-600' : ''} />
+            </button>
+          ) : null}
         </div>
         <div className="space-y-1 p-2.5">
           <h3 className="line-clamp-2 text-[13px] font-semibold leading-snug text-gray-900">{product.name}</h3>

@@ -196,14 +196,27 @@ export default function SearchPage() {
       ) : products.length ? (
         <div className="grid grid-cols-2 gap-3 pt-3 md:grid-cols-3 lg:grid-cols-4">
           {products.map((product) => (
-            <ProductCard
+            <div
               key={product.productId}
-              product={product}
-              searchCompact
-              showFavorite
-              favorited={isFavorited(product.productId)}
-              onFavoriteToggle={() => handleToggleFavorite(product.productId)}
-            />
+              role="link"
+              tabIndex={0}
+              onClick={() => router.push(`/product/${product.productId}`)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  router.push(`/product/${product.productId}`);
+                }
+              }}
+              className="block h-full cursor-pointer"
+            >
+              <ProductCard
+                product={product}
+                searchCompact
+                showFavorite
+                favorited={isFavorited(product.productId)}
+                onFavoriteToggle={() => handleToggleFavorite(product.productId)}
+              />
+            </div>
           ))}
         </div>
       ) : (
