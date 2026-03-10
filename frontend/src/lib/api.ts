@@ -3,7 +3,7 @@ import { User } from '@/types/user';
 
 type ProductType = 'grocery' | 'pharma';
 
-type ProductSort = 'relevance' | 'priceAsc' | 'priceDesc' | 'nameAsc';
+type ProductSort = 'relevance' | 'matchPriority' | 'priceAsc' | 'priceDesc' | 'nameAsc';
 
 interface ProductListResponse {
   products: Record<string, unknown>[];

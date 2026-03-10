@@ -33,7 +33,7 @@ export default function SearchPage() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [selectedStore, setSelectedStore] = useState<(typeof storeIds)[number]>('All Stores');
-  const [sortBy, setSortBy] = useState<'relevance' | 'priceAsc' | 'priceDesc' | 'nameAsc'>('relevance');
+  const [sortBy, setSortBy] = useState<'relevance' | 'matchPriority' | 'priceAsc' | 'priceDesc' | 'nameAsc'>('matchPriority');
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -244,7 +244,7 @@ export default function SearchPage() {
                 <p className="text-xs font-semibold uppercase tracking-wide text-gray-700">Sort</p>
                 <div className="grid grid-cols-2 gap-2">
                   {[
-                    { id: 'relevance', label: 'Relevance' },
+                    { id: 'matchPriority', label: 'Relevance' },
                     { id: 'priceAsc', label: 'Price Low-High' },
                     { id: 'priceDesc', label: 'Price High-Low' },
                     { id: 'nameAsc', label: 'Name A-Z' }

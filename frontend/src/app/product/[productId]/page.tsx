@@ -120,9 +120,60 @@ export default function ProductDetailsPage() {
       />
 
       {loading || !product ? (
-        <Card className="mt-3 rounded-[1.75rem] p-6">
-          <p className="text-sm text-gray-500">Loading product details...</p>
-        </Card>
+        <>
+          <Card className="mt-3 rounded-[1.75rem] p-3.5">
+            <div className="mb-3 flex items-center justify-center gap-2">
+              <div className="modern-shimmer h-10 w-28 rounded-full" />
+              <div className="modern-shimmer h-9 w-36 rounded-full" />
+            </div>
+            <div className="modern-shimmer relative mx-auto h-52 w-full max-w-[200px] rounded-2xl" />
+            <div className="mt-3 space-y-2 px-1">
+              <div className="modern-shimmer mx-auto h-6 w-10/12 rounded-lg" />
+              <div className="modern-shimmer mx-auto h-6 w-32 rounded-lg" />
+            </div>
+          </Card>
+
+          <Card className="mt-4 border border-green-100 bg-green-50 p-2.5">
+            <div className="mb-2 flex items-center gap-2">
+              <div className="modern-shimmer h-7 w-7 rounded-full" />
+              <div className="modern-shimmer h-6 w-24 rounded-lg" />
+            </div>
+            <div className="rounded-2xl bg-white p-2.5 shadow-sm">
+              <div className="flex items-center justify-between gap-3">
+                <div className="space-y-2">
+                  <div className="modern-shimmer h-5 w-24 rounded-md" />
+                  <div className="modern-shimmer h-5 w-20 rounded-md" />
+                </div>
+                <div className="modern-shimmer h-8 w-32 rounded-full" />
+              </div>
+            </div>
+          </Card>
+
+          <section className="mt-5">
+            <div className="modern-shimmer mb-3 h-7 w-36 rounded-lg" />
+            <div className="space-y-2.5">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <Card key={`details-shimmer-${index}`} className="p-0 shadow-[0_10px_22px_-18px_rgba(15,23,42,0.45)]">
+                  <div className="flex items-center gap-3 rounded-2xl px-3 py-2.5">
+                    <div className="modern-shimmer h-12 w-12 rounded-lg" />
+                    <span className="flex-1 space-y-1.5">
+                      <span className="modern-shimmer block h-4 w-11/12 rounded-md" />
+                      <span className="modern-shimmer block h-3 w-24 rounded-md" />
+                    </span>
+                    <span className="space-y-1.5">
+                      <span className="modern-shimmer block h-4 w-16 rounded-md" />
+                      <span className="modern-shimmer block h-4 w-14 rounded-full" />
+                    </span>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </section>
+
+          <div className="mt-6">
+            <div className="modern-shimmer h-11 w-full rounded-full" />
+          </div>
+        </>
       ) : (
         <>
           <Card className="mt-3 rounded-[1.75rem] p-3.5">
@@ -218,6 +269,31 @@ export default function ProductDetailsPage() {
         confirmLabel="Sign In"
         onConfirm={() => router.push('/sign-in')}
       />
+
+      <style jsx>{`
+        .modern-shimmer {
+          position: relative;
+          overflow: hidden;
+          background: linear-gradient(110deg, #f3f4f6 10%, #ffffff 40%, #e5e7eb 60%, #f3f4f6 90%);
+          background-size: 220% 100%;
+          animation: modern-shimmer 1.4s linear infinite;
+        }
+
+        @keyframes modern-shimmer {
+          0% {
+            background-position: 120% 0;
+          }
+          100% {
+            background-position: -120% 0;
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .modern-shimmer {
+            animation: none;
+          }
+        }
+      `}</style>
     </div>
   );
 }

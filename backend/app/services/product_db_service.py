@@ -150,7 +150,9 @@ async def list_products(
 
     where_sql = " AND ".join(clauses)
     order_sql = "ORDER BY matched_products_count DESC"
-    if sort == "priceAsc":
+    if sort == "matchPriority":
+        order_sql = "ORDER BY (matched_products_count = 5) DESC, matched_products_count DESC, name ASC"
+    elif sort == "priceAsc":
         order_sql = "ORDER BY price ASC"
     elif sort == "priceDesc":
         order_sql = "ORDER BY price DESC"
@@ -199,7 +201,9 @@ async def search_products(
 
     where_sql = " AND ".join(clauses)
     order_sql = "ORDER BY matched_products_count DESC"
-    if sort == "priceAsc":
+    if sort == "matchPriority":
+        order_sql = "ORDER BY (matched_products_count = 5) DESC, matched_products_count DESC, name ASC"
+    elif sort == "priceAsc":
         order_sql = "ORDER BY price ASC"
     elif sort == "priceDesc":
         order_sql = "ORDER BY price DESC"

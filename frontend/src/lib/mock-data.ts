@@ -75,23 +75,24 @@ export const homeCategories = [
 ];
 
 export const groceryCategories: GroceryCategory[] = [
-  { slug: 'atta-flour', name: 'Atta & Flour', urdu: 'آٹا', image: '/assets/images/Flour.jpg' },
+  { slug: 'milk', name: 'Milk', urdu: 'دودھ', image: '/assets/images/milk.png' },
+  { slug: 'cooking oil', name: 'Cooking Oil', urdu: 'کھانے کا تیل', image: '/assets/images/Cooking Oil.jpg' },
   { slug: 'rice', name: 'Rice', urdu: 'چاول', image: '/assets/images/Rice.jpg' },
-  { slug: 'cooking-oil', name: 'Cooking Oil', urdu: 'تیل', image: '/assets/images/Cooking Oil.jpg' },
-  { slug: 'spices', name: 'Spices', urdu: 'مصالحہ جات', image: '/assets/images/spices.png' },
-  { slug: 'pulses-lentils', name: 'Pulses & Lentils', urdu: 'دالیں', image: '/assets/images/Cereals.jpg' },
-  { slug: 'sugar-salt', name: 'Sugar & Salt', urdu: 'چینی و نمک', image: '/assets/images/Sugar.jpg' },
-  { slug: 'dairy-products', name: 'Dairy Products', urdu: 'دودھ و مکھن', image: '/assets/images/dairy.jpg' },
-  { slug: 'bread-biscuits', name: 'Bread & Biscuits', urdu: 'بریڈ و بسکٹ', image: '/assets/images/bakery.png' },
-  { slug: 'tea-coffee', name: 'Tea & Coffee', urdu: 'چائے و کافی', image: '/assets/images/Tea.jpg' },
+  { slug: 'frozen', name: 'Frozen', urdu: 'منجمد', image: '/assets/images/frozen.jpg' },
+  { slug: 'tea', name: 'Tea', urdu: 'چائے', image: '/assets/images/Tea.jpg' },
+  { slug: 'flour', name: 'Flour', urdu: 'آٹا', image: '/assets/images/Flour.jpg' },
+  { slug: 'sugar', name: 'Sugar', urdu: 'چینی', image: '/assets/images/Sugar.jpg' },
   { slug: 'beverages', name: 'Beverages', urdu: 'مشروبات', image: '/assets/images/beverages.png' },
   { slug: 'snacks', name: 'Snacks', urdu: 'اسنیکس', image: '/assets/images/snacks.png' },
-  { slug: 'fruits-vegetables', name: 'Fruits & Vegetables', urdu: 'پھل و سبزیاں', image: '/assets/images/veg.png' },
-  { slug: 'meat-poultry', name: 'Meat & Poultry', urdu: 'گوشت', image: '/assets/images/others.png' },
-  { slug: 'frozen-foods', name: 'Frozen Foods', urdu: 'منجمد کھانا', image: '/assets/images/frozen.jpg' },
-  { slug: 'cleaning-household', name: 'Cleaning & Household', urdu: 'صفائی کا سامان', image: '/assets/images/cleaning.png' },
-  { slug: 'baby-products', name: 'Baby Products', urdu: 'بچوں کا سامان', image: '/assets/images/baby.png' },
-  { slug: 'personal-care', name: 'Personal Care', urdu: 'ذاتی نگہداشت', image: '/assets/images/personal.png' }
+  { slug: 'bakery', name: 'Bakery', urdu: 'بیکری', image: '/assets/images/bakery.png' },
+  { slug: 'cooking essentials', name: 'Cooking Essentials', urdu: 'پکانے کا سامان', image: '/assets/images/spices.png' },
+  { slug: 'dairy', name: 'Dairy', urdu: 'ڈیری', image: '/assets/images/dairy.jpg' },
+  { slug: 'vegetables & fruits', name: 'Vegetables & Fruits', urdu: 'سبزیاں و پھل', image: '/assets/images/veg.png' },
+  { slug: 'household & cleaning', name: 'Household & Cleaning', urdu: 'گھریلو و صفائی', image: '/assets/images/cleaning.png' },
+  { slug: 'personal care & hygiene', name: 'Personal Care & Hygiene', urdu: 'ذاتی نگہداشت', image: '/assets/images/personal.png' },
+  { slug: 'baby care', name: 'Baby Care', urdu: 'بچوں کی نگہداشت', image: '/assets/images/baby.png' },
+  { slug: 'pet care', name: 'Pet Care', urdu: 'پالتو جانوروں کی نگہداشت', image: '/assets/images/pet.png' },
+  { slug: 'other', name: 'Other', urdu: 'دیگر', image: '/assets/images/others.png' }
 ];
 
 export const products: Product[] = [

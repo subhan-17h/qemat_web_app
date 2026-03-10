@@ -14,16 +14,18 @@ export default function GroceryCategoriesPage() {
 
       <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
         {groceryCategories.map((category) => (
-          <Link key={category.slug} href={`/search?category=${category.slug}`}>
+          <Link key={category.slug} href={{ pathname: '/search', query: { category: category.slug } }}>
             <Card className="flex min-h-28 items-center gap-3 p-3">
               <div className="flex-1">
                 <p className="text-sm font-semibold text-gray-900">{category.name}</p>
                 {category.transliteration ? <p className="text-xs text-gray-500">{category.transliteration}</p> : null}
-                <p className="text-xs text-gray-500">
-                  <span dir="rtl" className="font-urdu">
-                    {category.urdu}
-                  </span>
-                </p>
+                {category.urdu ? (
+                  <p className="text-xs text-gray-500">
+                    <span dir="rtl" className="font-urdu">
+                      {category.urdu}
+                    </span>
+                  </p>
+                ) : null}
               </div>
               <Image src={category.image} alt={category.name} width={60} height={60} className="rounded-lg object-cover" />
             </Card>

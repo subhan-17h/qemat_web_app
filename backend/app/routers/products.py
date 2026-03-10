@@ -72,7 +72,7 @@ async def search_products(
     category: Optional[str] = Query(None, description="Filter by category"),
     offset: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
-    sort: str = Query("relevance", enum=["relevance", "priceAsc", "priceDesc", "nameAsc"]),
+    sort: str = Query("relevance", enum=["relevance", "matchPriority", "priceAsc", "priceDesc", "nameAsc"]),
 ):
     """Search products by name and category variations (includes Urdu/Roman Urdu).
     
@@ -130,7 +130,7 @@ async def list_products(
     category: Optional[str] = Query(None, description="Filter by category"),
     offset: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
-    sort: str = Query("relevance", enum=["relevance", "priceAsc", "priceDesc", "nameAsc"]),
+    sort: str = Query("relevance", enum=["relevance", "matchPriority", "priceAsc", "priceDesc", "nameAsc"]),
 ):
     """List products with optional filters."""
     products, total = await product_service.get_products_filtered(

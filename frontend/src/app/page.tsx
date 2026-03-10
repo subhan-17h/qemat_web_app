@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ChevronRight, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 import { AppBar } from '@/components/navigation/AppBar';
 import { Card } from '@/components/shared/Card';
@@ -15,6 +16,7 @@ import { Product } from '@/types/product';
 const TRENDING_PREVIEW_LIMIT = 10;
 
 export default function HomePage() {
+  const router = useRouter();
   const [trending, setTrending] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -117,13 +119,26 @@ export default function HomePage() {
             <div className="overflow-hidden">
               <div className="preview-track flex w-max gap-4">
                 {autoScrollProducts.map((product, index) => (
-                  <ProductCard
+                  <div
                     key={`${product.productId}-${index}`}
-                    product={product}
-                    compact
-                    homePopular
-                    className="w-[164px] shrink-0 border-gray-200/70 shadow-none"
-                  />
+                    role="link"
+                    tabIndex={0}
+                    onClick={() => router.push(`/product/${product.productId}`)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        router.push(`/product/${product.productId}`);
+                      }
+                    }}
+                    className="w-[164px] shrink-0 cursor-pointer"
+                  >
+                    <ProductCard
+                      product={product}
+                      compact
+                      homePopular
+                      className="w-[164px] border-gray-200/70 shadow-none"
+                    />
+                  </div>
                 ))}
               </div>
             </div>
