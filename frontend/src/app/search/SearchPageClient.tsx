@@ -61,6 +61,8 @@ export default function SearchPage() {
   const [filtersClosing, setFiltersClosing] = useState(false);
   const [searchFabBurst, setSearchFabBurst] = useState(false);
   const [filterTriggerBurst, setFilterTriggerBurst] = useState(false);
+  const [storeChipPillStyle, setStoreChipPillStyle] = useState<CSSProperties>({ opacity: 0 });
+  const [sortChipPillStyle, setSortChipPillStyle] = useState<CSSProperties>({ opacity: 0 });
   const [selectedStore, setSelectedStore] = useState<(typeof storeIds)[number]>('All Stores');
   const [sortBy, setSortBy] = useState<'relevance' | 'matchPriority' | 'priceAsc' | 'priceDesc' | 'nameAsc'>('matchPriority');
 
@@ -73,6 +75,10 @@ export default function SearchPage() {
   const productCardRefs = useRef(new Map<string, HTMLDivElement>());
   const visibleProductCards = useRef(new Set<HTMLDivElement>());
   const parallaxFrame = useRef<number | null>(null);
+  const storeChipTrackRef = useRef<HTMLDivElement | null>(null);
+  const sortChipTrackRef = useRef<HTMLDivElement | null>(null);
+  const storeChipRefs = useRef(new Map<(typeof storeIds)[number], HTMLButtonElement>());
+  const sortChipRefs = useRef(new Map<string, HTMLButtonElement>());
   const searchCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const filtersCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const searchFabTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -117,6 +123,60 @@ export default function SearchPage() {
     },
     []
   );
+
+  const registerStoreChip = useCallback(
+    (store: (typeof storeIds)[number]) => (node: HTMLButtonElement | null) => {
+      if (node) {
+        storeChipRefs.current.set(store, node);
+      } else {
+        storeChipRefs.current.delete(store);
+      }
+    },
+    []
+  );
+
+  const registerSortChip = useCallback(
+    (sortKey: string) => (node: HTMLButtonElement | null) => {
+      if (node) {
+        sortChipRefs.current.set(sortKey, node);
+      } else {
+        sortChipRefs.current.delete(sortKey);
+      }
+    },
+    []
+  );
+
+  const syncStoreChipPill = useCallback(() => {
+    const track = storeChipTrackRef.current;
+    const activeChip = storeChipRefs.current.get(selectedStore);
+    if (!track || !activeChip) {
+      setStoreChipPillStyle({ opacity: 0 });
+      return;
+    }
+
+    setStoreChipPillStyle({
+      transform: `translate3d(${activeChip.offsetLeft}px, ${activeChip.offsetTop}px, 0)`,
+      width: `${activeChip.offsetWidth}px`,
+      height: `${activeChip.offsetHeight}px`,
+      opacity: 1
+    });
+  }, [selectedStore]);
+
+  const syncSortChipPill = useCallback(() => {
+    const track = sortChipTrackRef.current;
+    const activeChip = sortChipRefs.current.get(sortBy);
+    if (!track || !activeChip) {
+      setSortChipPillStyle({ opacity: 0 });
+      return;
+    }
+
+    setSortChipPillStyle({
+      transform: `translate3d(${activeChip.offsetLeft}px, ${activeChip.offsetTop}px, 0)`,
+      width: `${activeChip.offsetWidth}px`,
+      height: `${activeChip.offsetHeight}px`,
+      opacity: 1
+    });
+  }, [sortBy]);
 
   const queueParallaxUpdate = useCallback(() => {
     if (typeof window === 'undefined') return;
@@ -267,6 +327,34 @@ export default function SearchPage() {
       }
     };
   }, [loading, products.length, queueParallaxUpdate]);
+
+  useEffect(() => {
+    if (!filtersOpen) return;
+    const raf = window.requestAnimationFrame(() => {
+      syncStoreChipPill();
+      syncSortChipPill();
+    });
+
+    return () => window.cancelAnimationFrame(raf);
+  }, [filtersOpen, selectedStore, sortBy, syncStoreChipPill, syncSortChipPill]);
+
+  useEffect(() => {
+    if (!filtersOpen) return;
+
+    const handleResize = () => {
+      syncStoreChipPill();
+      syncSortChipPill();
+    };
+
+    const track = storeChipTrackRef.current;
+    track?.addEventListener('scroll', syncStoreChipPill, { passive: true });
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      track?.removeEventListener('scroll', syncStoreChipPill);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [filtersOpen, syncStoreChipPill, syncSortChipPill]);
 
   const blurActiveElement = () => {
     if (typeof document !== 'undefined') {
@@ -444,16 +532,19 @@ export default function SearchPage() {
 
               <div className="space-y-2">
                 <p className="text-xs font-semibold uppercase tracking-wide text-gray-700">Store</p>
-                <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
+                <div ref={storeChipTrackRef} className="filter-chip-track no-scrollbar flex gap-2 overflow-x-auto pb-1">
+                  <span className="filter-chip-pill" style={storeChipPillStyle} aria-hidden />
                   {storeIds.map((store) => (
                     <button
                       key={store}
+                      ref={registerStoreChip(store)}
                       onClick={() => setSelectedStore(store)}
+                      data-active={selectedStore === store}
                       className={cn(
-                        'whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-medium backdrop-blur-xl transition-colors',
+                        'filter-chip-btn whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium backdrop-blur-xl transition-colors',
                         selectedStore === store
-                          ? 'border-brand-400/60 bg-brand-500/85 text-white'
-                          : 'border-white/25 bg-black/20 text-white'
+                          ? 'bg-transparent text-white'
+                          : 'bg-black/20 text-white'
                       )}
                     >
                       {store}
@@ -464,7 +555,8 @@ export default function SearchPage() {
 
               <div className="mt-3 space-y-2">
                 <p className="text-xs font-semibold uppercase tracking-wide text-gray-700">Sort</p>
-                <div className="grid grid-cols-2 gap-2">
+                <div ref={sortChipTrackRef} className="filter-chip-track grid grid-cols-2 gap-2">
+                  <span className="filter-chip-pill" style={sortChipPillStyle} aria-hidden />
                   {[
                     { id: 'matchPriority', label: 'Relevance' },
                     { id: 'priceAsc', label: 'Price Low-High' },
@@ -473,12 +565,14 @@ export default function SearchPage() {
                   ].map((option) => (
                     <button
                       key={option.id}
+                      ref={registerSortChip(option.id)}
                       onClick={() => setSortBy(option.id as typeof sortBy)}
+                      data-active={sortBy === option.id}
                       className={cn(
-                        'rounded-full border px-3 py-1.5 text-xs font-medium transition-colors',
+                        'filter-chip-btn rounded-full px-3 py-1.5 text-xs font-medium transition-colors',
                         sortBy === option.id
-                          ? 'border-brand-400/60 bg-brand-500/85 text-white'
-                          : 'border-white/25 bg-black/20 text-white'
+                          ? 'bg-transparent text-white'
+                          : 'bg-black/20 text-white'
                       )}
                     >
                       {option.label}
@@ -580,6 +674,54 @@ export default function SearchPage() {
           animation: filter-trigger-burst 380ms cubic-bezier(0.2, 0.9, 0.22, 1);
         }
 
+        .filter-chip-track {
+          position: relative;
+          isolation: isolate;
+        }
+
+        .filter-chip-pill {
+          position: absolute;
+          left: 0;
+          top: 0;
+          z-index: 0;
+          border-radius: 9999px;
+          background: linear-gradient(140deg, #34d399 0%, #10b981 60%, #059669 100%);
+          box-shadow:
+            0 10px 22px -14px rgba(16, 185, 129, 0.95),
+            inset 0 1px 0 rgba(255, 255, 255, 0.45);
+          transform: translate3d(0, 0, 0);
+          opacity: 0;
+          transition:
+            transform 420ms cubic-bezier(0.2, 0.9, 0.2, 1),
+            width 420ms cubic-bezier(0.2, 0.9, 0.2, 1),
+            height 420ms cubic-bezier(0.2, 0.9, 0.2, 1),
+            opacity 220ms ease;
+          animation: filter-chip-pill-pop 420ms cubic-bezier(0.2, 0.9, 0.2, 1);
+          pointer-events: none;
+        }
+
+        .filter-chip-btn {
+          position: relative;
+          z-index: 1;
+          transition:
+            color 240ms ease,
+            border-color 240ms ease,
+            background-color 240ms ease,
+            transform 240ms cubic-bezier(0.2, 0.9, 0.2, 1);
+        }
+
+        .filter-chip-btn:hover {
+          transform: translateY(-1px);
+        }
+
+        .filter-chip-btn:active {
+          transform: scale(0.95);
+        }
+
+        .filter-chip-btn[data-active='true'] {
+          transform: translateY(0);
+        }
+
         .search-overlay,
         .filters-overlay {
           animation: floating-overlay-in 220ms ease forwards;
@@ -678,6 +820,16 @@ export default function SearchPage() {
           }
         }
 
+        @keyframes filter-chip-pill-pop {
+          0% {
+            opacity: 0;
+            transform: scale(0.9);
+          }
+          100% {
+            opacity: 1;
+          }
+        }
+
         @keyframes floating-overlay-in {
           0% {
             opacity: 0;
@@ -760,6 +912,10 @@ export default function SearchPage() {
           .search-filter-trigger:hover,
           .search-filter-trigger:active,
           .search-filter-trigger-burst,
+          .filter-chip-pill,
+          .filter-chip-btn,
+          .filter-chip-btn:hover,
+          .filter-chip-btn:active,
           .search-overlay,
           .search-overlay.is-leaving,
           .filters-overlay,
