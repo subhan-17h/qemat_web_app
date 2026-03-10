@@ -3,6 +3,7 @@
 import { Search, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import type { CSSProperties } from 'react';
 
 import { AppBar } from '@/components/navigation/AppBar';
 import { EmptyState } from '@/components/shared/EmptyState';
@@ -64,6 +65,9 @@ export default function SearchPage() {
   const [total, setTotal] = useState(0);
 
   const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const productCardRefs = useRef(new Map<string, HTMLDivElement>());
+  const visibleProductCards = useRef(new Set<HTMLDivElement>());
+  const parallaxFrame = useRef<number | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(query.trim()), 250);
@@ -75,6 +79,51 @@ export default function SearchPage() {
   const categoryFilter = category ?? undefined;
 
   const hasMore = products.length < total;
+
+  const registerProductCard = useCallback(
+    (productId: string) => (node: HTMLDivElement | null) => {
+      const existingNode = productCardRefs.current.get(productId);
+      if (existingNode && existingNode !== node) {
+        visibleProductCards.current.delete(existingNode);
+      }
+
+      if (node) {
+        productCardRefs.current.set(productId, node);
+        return;
+      }
+
+      if (existingNode) {
+        productCardRefs.current.delete(productId);
+        visibleProductCards.current.delete(existingNode);
+      }
+    },
+    []
+  );
+
+  const queueParallaxUpdate = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    if (parallaxFrame.current !== null) return;
+
+    parallaxFrame.current = window.requestAnimationFrame(() => {
+      parallaxFrame.current = null;
+      const viewportCenter = window.innerHeight * 0.5;
+
+      visibleProductCards.current.forEach((card) => {
+        const rect = card.getBoundingClientRect();
+        if (rect.bottom < -50 || rect.top > window.innerHeight + 50) return;
+
+        const center = rect.top + rect.height * 0.5;
+        const ratio = Math.max(-1, Math.min(1, (center - viewportCenter) / viewportCenter));
+        const shift = ratio * -15;
+        const tilt = ratio * -2.4;
+        const scale = 1 - Math.abs(ratio) * 0.03;
+
+        card.style.setProperty('--card-parallax-y', `${shift.toFixed(2)}px`);
+        card.style.setProperty('--card-parallax-tilt', `${tilt.toFixed(2)}deg`);
+        card.style.setProperty('--card-parallax-scale', `${scale.toFixed(3)}`);
+      });
+    });
+  }, []);
 
   const loadPage = useCallback(
     async (offset: number, append: boolean) => {
@@ -146,6 +195,61 @@ export default function SearchPage() {
     return () => observer.disconnect();
   }, [hasMore, loadingMore, loading, products.length, debouncedQuery, storeFilter, categoryFilter, sortBy, type, loadPage]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (loading || !products.length) return;
+
+    const cards = Array.from(productCardRefs.current.values());
+    if (!cards.length) return;
+    const visibleCards = visibleProductCards.current;
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion) {
+      cards.forEach((card) => {
+        card.dataset.visible = 'true';
+        card.style.removeProperty('--card-parallax-y');
+        card.style.removeProperty('--card-parallax-tilt');
+        card.style.removeProperty('--card-parallax-scale');
+      });
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const card = entry.target as HTMLDivElement;
+          if (entry.isIntersecting) {
+            card.dataset.visible = 'true';
+            visibleCards.add(card);
+          } else {
+            visibleCards.delete(card);
+            card.style.setProperty('--card-parallax-y', '0px');
+            card.style.setProperty('--card-parallax-tilt', '0deg');
+            card.style.setProperty('--card-parallax-scale', '1');
+          }
+        });
+        queueParallaxUpdate();
+      },
+      { rootMargin: '220px 0px', threshold: [0, 0.15, 0.45] }
+    );
+
+    cards.forEach((card) => observer.observe(card));
+    queueParallaxUpdate();
+    window.addEventListener('scroll', queueParallaxUpdate, { passive: true });
+    window.addEventListener('resize', queueParallaxUpdate);
+
+    return () => {
+      observer.disconnect();
+      visibleCards.clear();
+      window.removeEventListener('scroll', queueParallaxUpdate);
+      window.removeEventListener('resize', queueParallaxUpdate);
+      if (parallaxFrame.current !== null) {
+        window.cancelAnimationFrame(parallaxFrame.current);
+        parallaxFrame.current = null;
+      }
+    };
+  }, [loading, products.length, queueParallaxUpdate]);
+
   const closeSearch = () => {
     setSearchOpen(false);
     if (typeof document !== 'undefined') {
@@ -194,12 +298,14 @@ export default function SearchPage() {
       {loading ? (
         <SearchShimmerGrid count={8} prefix="search-shimmer" />
       ) : products.length ? (
-        <div className="grid grid-cols-2 gap-3 pt-3 md:grid-cols-3 lg:grid-cols-4">
-          {products.map((product) => (
+        <div className="search-scroll-grid grid grid-cols-2 gap-x-3 gap-y-4 pt-3 md:grid-cols-3 md:gap-y-5 lg:grid-cols-4">
+          {products.map((product, index) => (
             <div
               key={product.productId}
               role="link"
               tabIndex={0}
+              ref={registerProductCard(product.productId)}
+              data-visible="false"
               onClick={() => router.push(`/product/${product.productId}`)}
               onKeyDown={(event) => {
                 if (event.key === 'Enter' || event.key === ' ') {
@@ -207,15 +313,22 @@ export default function SearchPage() {
                   router.push(`/product/${product.productId}`);
                 }
               }}
-              className="block h-full cursor-pointer"
+              className="search-scroll-card block h-full cursor-pointer"
+              style={
+                {
+                  '--card-enter-delay': `${Math.min(index, 10) * 38}ms`
+                } as CSSProperties
+              }
             >
-              <ProductCard
-                product={product}
-                searchCompact
-                showFavorite
-                favorited={isFavorited(product.productId)}
-                onFavoriteToggle={() => handleToggleFavorite(product.productId)}
-              />
+              <div className="search-scroll-card-inner h-full">
+                <ProductCard
+                  product={product}
+                  searchCompact
+                  showFavorite
+                  favorited={isFavorited(product.productId)}
+                  onFavoriteToggle={() => handleToggleFavorite(product.productId)}
+                />
+              </div>
             </div>
           ))}
         </div>
@@ -333,6 +446,36 @@ export default function SearchPage() {
       ) : null}
 
       <style jsx global>{`
+        .search-scroll-grid {
+          perspective: 1000px;
+        }
+
+        .search-scroll-card {
+          opacity: 0;
+          transform: translate3d(0, 22px, 0);
+          filter: saturate(0.9);
+          transition:
+            opacity 520ms cubic-bezier(0.22, 1, 0.36, 1),
+            transform 600ms cubic-bezier(0.22, 1, 0.36, 1),
+            filter 520ms ease;
+          transition-delay: var(--card-enter-delay, 0ms);
+        }
+
+        .search-scroll-card[data-visible='true'] {
+          opacity: 1;
+          transform: translate3d(0, 0, 0);
+          filter: saturate(1);
+        }
+
+        .search-scroll-card-inner {
+          height: 100%;
+          will-change: transform;
+          transform: translate3d(0, var(--card-parallax-y, 0px), 0) rotateX(var(--card-parallax-tilt, 0deg))
+            scale(var(--card-parallax-scale, 1));
+          transform-origin: center center;
+          transition: transform 180ms cubic-bezier(0.2, 0.88, 0.32, 1);
+        }
+
         .search-modern-shimmer {
           position: relative;
           overflow: hidden;
@@ -351,6 +494,19 @@ export default function SearchPage() {
         }
 
         @media (prefers-reduced-motion: reduce) {
+          .search-scroll-card,
+          .search-scroll-card[data-visible='true'] {
+            opacity: 1;
+            transform: none;
+            filter: none;
+            transition: none;
+          }
+
+          .search-scroll-card-inner {
+            transition: none;
+            transform: none !important;
+          }
+
           .search-modern-shimmer {
             animation: none;
           }
