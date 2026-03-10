@@ -6,7 +6,6 @@ import { ChevronRight, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { AppBar } from '@/components/navigation/AppBar';
-import { Button } from '@/components/shared/Button';
 import { Card } from '@/components/shared/Card';
 import { ProductCard } from '@/components/shared/ProductCard';
 import { SkeletonCard } from '@/components/shared/SkeletonCard';
@@ -83,13 +82,8 @@ export default function HomePage() {
         </section>
 
         <section className="space-y-4 pt-1">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center">
             <h2 className="text-lg font-bold text-gray-900">Most Popular</h2>
-            <Link href="/search">
-              <Button size="sm" variant="secondary">
-                View All
-              </Button>
-            </Link>
           </div>
 
           {loading ? (

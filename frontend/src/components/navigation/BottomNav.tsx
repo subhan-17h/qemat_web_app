@@ -19,7 +19,7 @@ export function BottomNav() {
   return (
     <nav
       className="fixed left-1/2 z-40 w-[calc(100%-5rem)] max-w-[22rem] -translate-x-1/2 lg:hidden"
-      style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + var(--browser-bar-offset, 0px) + 4px)' }}
+      style={{ bottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
       <div className="rounded-[2rem] border border-white/15 bg-black/30 px-1 py-0.5 backdrop-blur-lg">
         <ul className="grid grid-cols-4 gap-0">
