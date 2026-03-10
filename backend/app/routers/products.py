@@ -93,12 +93,33 @@ async def search_products(
 
 
 @router.get("/trending", response_model=TrendingResponse)
-async def get_trending():
+async def get_trending(
+    limit: int = Query(6, ge=1, le=100),
+    matched_products_count_gt: Optional[int] = Query(None, ge=0),
+    matched_products_count_lt: Optional[int] = Query(None, ge=1),
+):
     """Get trending products (daily cached, randomized).
     
-    Products with 2 < matched_products_count <= 5.
+    Defaults to 2 < matched_products_count <= 5, can be overridden via query params.
     """
-    products = await product_service.get_trending_products()
+    if (
+        matched_products_count_gt is not None
+        and matched_products_count_lt is not None
+        and matched_products_count_gt >= matched_products_count_lt
+    ):
+        raise HTTPException(
+            status_code=422,
+            detail="matched_products_count_gt must be less than matched_products_count_lt",
+        )
+
+    if limit == 6 and matched_products_count_gt is None and matched_products_count_lt is None:
+        products = await product_service.get_trending_products()
+    else:
+        products = await product_service.get_trending_products(
+            limit=limit,
+            matched_products_count_gt=matched_products_count_gt,
+            matched_products_count_lt=matched_products_count_lt,
+        )
     return TrendingResponse(products=products)
 
 

@@ -249,16 +249,36 @@ async def get_product_with_matches(product_id: str) -> tuple[Optional[Product], 
     return product, [_row_to_product(r) for r in rows]
 
 
-async def get_trending_products(limit: int = 6) -> list[Product]:
+async def get_trending_products(
+    limit: int = 6,
+    matched_products_count_gt: Optional[int] = None,
+    matched_products_count_lt: Optional[int] = None,
+) -> list[Product]:
+    clauses: list[str] = []
+    params: list[object] = []
+
+    if matched_products_count_gt is not None:
+        clauses.append(f"matched_products_count > ${len(params) + 1}")
+        params.append(matched_products_count_gt)
+    if matched_products_count_lt is not None:
+        clauses.append(f"matched_products_count < ${len(params) + 1}")
+        params.append(matched_products_count_lt)
+
+    if not clauses:
+        # Preserve legacy trending behavior when no explicit filters are provided.
+        clauses = ["matched_products_count > 2", "matched_products_count <= 5"]
+
+    where_sql = " AND ".join(clauses)
+    limit_placeholder = len(params) + 1
+    sql = f"""
+        SELECT * FROM products
+        WHERE {where_sql}
+        ORDER BY random()
+        LIMIT ${limit_placeholder}
+    """
+
     pool = await get_pool()
     async with pool.acquire() as conn:
-        rows = await conn.fetch(
-            """
-            SELECT * FROM products
-            WHERE matched_products_count > 2 AND matched_products_count <= 5
-            ORDER BY random()
-            LIMIT $1
-            """,
-            limit,
-        )
+        rows = await conn.fetch(sql, *params, limit)
+
     return [_row_to_product(r) for r in rows]

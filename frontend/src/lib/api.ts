@@ -203,8 +203,18 @@ export async function searchProductsPage(params: {
   };
 }
 
-export async function fetchTrendingProducts(): Promise<Product[]> {
-  const response = await request<{ products: Record<string, unknown>[] }>('/api/products/trending');
+export async function fetchTrendingProducts(params?: {
+  limit?: number;
+  matchedProductsCountGt?: number;
+  matchedProductsCountLt?: number;
+}): Promise<Product[]> {
+  const query = new URLSearchParams();
+  if (typeof params?.limit === 'number') query.set('limit', String(params.limit));
+  if (typeof params?.matchedProductsCountGt === 'number') query.set('matched_products_count_gt', String(params.matchedProductsCountGt));
+  if (typeof params?.matchedProductsCountLt === 'number') query.set('matched_products_count_lt', String(params.matchedProductsCountLt));
+
+  const path = query.toString() ? `/api/products/trending?${query.toString()}` : '/api/products/trending';
+  const response = await request<{ products: Record<string, unknown>[] }>(path);
   return (response.products ?? []).map((item) => normalizeProduct(item, false));
 }
 

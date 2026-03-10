@@ -163,9 +163,17 @@ async def get_product_with_matches(product_id: str) -> tuple[Product, list[Produ
     return product, matches
 
 
-async def get_trending_products() -> list[Product]:
+async def get_trending_products(
+    limit: int = 6,
+    matched_products_count_gt: Optional[int] = None,
+    matched_products_count_lt: Optional[int] = None,
+) -> list[Product]:
     """Get trending products from DB."""
-    return await product_db_service.get_trending_products(limit=6)
+    return await product_db_service.get_trending_products(
+        limit=limit,
+        matched_products_count_gt=matched_products_count_gt,
+        matched_products_count_lt=matched_products_count_lt,
+    )
 
 
 def parse_bundle_products(bundle_data: dict, is_pharma: bool = False) -> list[Product]:

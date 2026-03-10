@@ -8,10 +8,11 @@ import { useEffect, useState } from 'react';
 import { AppBar } from '@/components/navigation/AppBar';
 import { Card } from '@/components/shared/Card';
 import { ProductCard } from '@/components/shared/ProductCard';
-import { SkeletonCard } from '@/components/shared/SkeletonCard';
 import { homeCategories } from '@/lib/mock-data';
 import { fetchTrendingProducts } from '@/lib/api';
 import { Product } from '@/types/product';
+
+const TRENDING_PREVIEW_LIMIT = 10;
 
 export default function HomePage() {
   const [trending, setTrending] = useState<Product[]>([]);
@@ -21,7 +22,11 @@ export default function HomePage() {
     let active = true;
     const loadTrending = async () => {
       try {
-        const data = await fetchTrendingProducts();
+        const data = await fetchTrendingProducts({
+          limit: TRENDING_PREVIEW_LIMIT,
+          matchedProductsCountGt: 3,
+          matchedProductsCountLt: 6
+        });
         if (active) setTrending(data);
       } catch (error) {
         console.error('Failed to load trending products.', error);
@@ -35,6 +40,9 @@ export default function HomePage() {
       active = false;
     };
   }, []);
+
+  const previewProducts = trending.slice(0, TRENDING_PREVIEW_LIMIT);
+  const autoScrollProducts = previewProducts.length ? [...previewProducts, ...previewProducts] : [];
 
   return (
     <div className="mx-auto h-full w-full max-w-screen-xl overflow-hidden px-4 pb-2 lg:px-8">
@@ -87,42 +95,90 @@ export default function HomePage() {
           </div>
 
           {loading ? (
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
-              {Array.from({ length: 6 }).map((_, index) => (
-                <SkeletonCard key={index} />
-              ))}
+            <div className="overflow-hidden">
+              <div className="flex gap-4">
+                {Array.from({ length: 5 }).map((_, index) => (
+                  <div
+                    key={`shimmer-${index}`}
+                    className="shimmer-card h-[238px] w-[164px] shrink-0 overflow-hidden rounded-2xl border border-gray-200/70 bg-white p-0"
+                  >
+                    <div className="modern-shimmer h-24 w-full rounded-t-2xl" />
+                    <div className="space-y-2 p-3">
+                      <div className="modern-shimmer h-4 w-11/12 rounded-md" />
+                      <div className="modern-shimmer h-4 w-7/12 rounded-md" />
+                      <div className="modern-shimmer h-5 w-6/12 rounded-lg" />
+                      <div className="modern-shimmer h-9 w-full rounded-xl" />
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-          ) : (
-            <>
-              <div className="no-scrollbar flex gap-4 overflow-x-auto lg:hidden">
-                {trending.map((product) => (
+          ) : previewProducts.length ? (
+            <div className="overflow-hidden">
+              <div className="preview-track flex w-max gap-4">
+                {autoScrollProducts.map((product, index) => (
                   <ProductCard
-                    key={product.productId}
+                    key={`${product.productId}-${index}`}
                     product={product}
                     compact
                     homePopular
-                    className="min-w-[148px] border-gray-200/70 shadow-none"
+                    className="w-[164px] shrink-0 border-gray-200/70 shadow-none"
                   />
                 ))}
               </div>
-
-              <div className="hidden overflow-hidden lg:block">
-                <div className="grid grid-cols-4 gap-4">
-                  {trending.map((product) => (
-                    <ProductCard
-                      key={product.productId}
-                      product={product}
-                      compact
-                      homePopular
-                      className="border-gray-200/70 shadow-none"
-                    />
-                  ))}
-                </div>
-              </div>
-            </>
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500">No trending products available right now.</p>
           )}
         </section>
       </div>
+
+      <style jsx>{`
+        .preview-track {
+          animation: preview-marquee 36s linear infinite;
+          will-change: transform;
+        }
+
+        .preview-track:hover {
+          animation-play-state: paused;
+        }
+
+        .modern-shimmer {
+          position: relative;
+          overflow: hidden;
+          background: linear-gradient(110deg, #f3f4f6 10%, #ffffff 40%, #e5e7eb 60%, #f3f4f6 90%);
+          background-size: 220% 100%;
+          animation: modern-shimmer 1.4s linear infinite;
+        }
+
+        @keyframes preview-marquee {
+          0% {
+            transform: translateX(0);
+          }
+          100% {
+            transform: translateX(-50%);
+          }
+        }
+
+        @keyframes modern-shimmer {
+          0% {
+            background-position: 120% 0;
+          }
+          100% {
+            background-position: -120% 0;
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .preview-track {
+            animation: none;
+          }
+
+          .modern-shimmer {
+            animation: none;
+          }
+        }
+      `}</style>
     </div>
   );
 }
