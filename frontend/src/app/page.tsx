@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { ChevronRight, Search } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { type MouseEvent, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { AppBar } from '@/components/navigation/AppBar';
@@ -19,6 +19,41 @@ export default function HomePage() {
   const router = useRouter();
   const [trending, setTrending] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const handlePageOpenTransition = (event: MouseEvent<HTMLElement>, href: string) => {
+    const isModifiedClick = event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0;
+    if (isModifiedClick) return;
+
+    if (href.startsWith('/search/categories')) {
+      sessionStorage.setItem('qemat-categories-entry', 'home-grocery');
+    }
+
+    const docWithTransition = document as Document & {
+      startViewTransition?: (callback: () => void) => { finished: Promise<void> };
+    };
+
+    if (docWithTransition.startViewTransition) {
+      event.preventDefault();
+      const root = document.documentElement;
+      const card = event.currentTarget as HTMLElement;
+      const rect = card.getBoundingClientRect();
+      const originX = `${((rect.left + rect.width / 2) / window.innerWidth) * 100}%`;
+      const originY = `${((rect.top + rect.height / 2) / window.innerHeight) * 100}%`;
+
+      root.setAttribute('data-nav-intent', 'browse-open');
+      root.style.setProperty('--vt-origin-x', originX);
+      root.style.setProperty('--vt-origin-y', originY);
+
+      const transition = docWithTransition.startViewTransition(() => {
+        router.push(href);
+      });
+      transition.finished.finally(() => {
+        root.removeAttribute('data-nav-intent');
+        root.style.removeProperty('--vt-origin-x');
+        root.style.removeProperty('--vt-origin-y');
+      });
+    }
+  };
 
   useEffect(() => {
     let active = true;
@@ -51,7 +86,10 @@ export default function HomePage() {
       <AppBar title="Qemat" />
 
       <div className="mt-4 space-y-5">
-        <Link href="/search?browse=true">
+        <Link
+          href="/search?browse=true"
+          onClick={(event) => handlePageOpenTransition(event, '/search?browse=true')}
+        >
           <Card className="flex cursor-pointer items-center gap-3">
             <span className="grid h-11 w-11 place-items-center rounded-xl bg-green-100 text-brand-700">
               <Search size={20} />
@@ -73,6 +111,7 @@ export default function HomePage() {
                 <Link
                   key={category.key}
                   href={href}
+                  onClick={(event) => handlePageOpenTransition(event, href)}
                   className="min-h-[132px] rounded-2xl p-4 shadow-sm"
                   style={{ backgroundColor: category.bg }}
                 >

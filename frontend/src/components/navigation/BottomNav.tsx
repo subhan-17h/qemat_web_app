@@ -49,15 +49,19 @@ export function BottomNav() {
                         }
 
                         const docWithTransition = document as Document & {
-                          startViewTransition?: (callback: () => void) => void;
+                          startViewTransition?: (callback: () => void) => { finished: Promise<void> };
                         };
 
                         if (docWithTransition.startViewTransition) {
                           event.preventDefault();
                           const direction = index > activeIndex ? 'right' : 'left';
-                          document.documentElement.setAttribute('data-tab-direction', direction);
-                          docWithTransition.startViewTransition(() => {
+                          const root = document.documentElement;
+                          root.setAttribute('data-tab-direction', direction);
+                          const transition = docWithTransition.startViewTransition(() => {
                             router.push(item.href);
+                          });
+                          transition.finished.finally(() => {
+                            root.removeAttribute('data-tab-direction');
                           });
                         }
                       }}
