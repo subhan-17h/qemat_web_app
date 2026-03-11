@@ -9,6 +9,7 @@ import { User } from '@/types/user';
 interface AppStoreValue {
   user: User | null;
   favorites: string[];
+  favoritesLoaded: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signUp: (name: string, email: string, password: string) => Promise<void>;
@@ -23,6 +24,7 @@ const AppStoreContext = createContext<AppStoreValue | null>(null);
 export function AppStoreProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [favorites, setFavorites] = useState<string[]>([]);
+  const [favoritesLoaded, setFavoritesLoaded] = useState(false);
 
   useEffect(() => {
     const userRaw = localStorage.getItem('qemat-user');
@@ -38,9 +40,11 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     const loadFavorites = async () => {
       if (!user?.token) {
         setFavorites([]);
+        setFavoritesLoaded(true);
         return;
       }
 
+      setFavoritesLoaded(false);
       try {
         const favoriteIds = await fetchFavorites(user.token);
         if (active) {
@@ -48,6 +52,13 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
         }
       } catch (error) {
         console.error('Failed to load favorites from backend.', error);
+        if (active) {
+          setFavorites([]);
+        }
+      } finally {
+        if (active) {
+          setFavoritesLoaded(true);
+        }
       }
     };
 
@@ -72,6 +83,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   const signIn = useCallback(async (email: string, password: string) => {
     const nextUser = await signInWithBackend(email, password);
     setUser(nextUser);
+    setFavoritesLoaded(false);
 
     try {
       const favoriteIds = await fetchFavorites(nextUser.token);
@@ -79,6 +91,8 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error('Failed to sync favorites after sign-in.', error);
       setFavorites([]);
+    } finally {
+      setFavoritesLoaded(true);
     }
   }, []);
 
@@ -86,6 +100,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     const idToken = await getGoogleIdTokenForBackend();
     const nextUser = await signInWithGoogleToken(idToken);
     setUser(nextUser);
+    setFavoritesLoaded(false);
 
     try {
       const favoriteIds = await fetchFavorites(nextUser.token);
@@ -93,6 +108,8 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error('Failed to sync favorites after Google sign-in.', error);
       setFavorites([]);
+    } finally {
+      setFavoritesLoaded(true);
     }
   }, []);
 
@@ -100,11 +117,13 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     const nextUser = await signUpWithBackend(name, email, password);
     setUser(nextUser);
     setFavorites([]);
+    setFavoritesLoaded(true);
   }, []);
 
   const signOut = useCallback(() => {
     setUser(null);
     setFavorites([]);
+    setFavoritesLoaded(true);
   }, []);
 
   const toggleFavorite = useCallback(
@@ -157,6 +176,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     () => ({
       user,
       favorites,
+      favoritesLoaded,
       signIn,
       signInWithGoogle,
       signUp,
@@ -165,7 +185,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       removeFavorite,
       isFavorited
     }),
-    [favorites, isFavorited, removeFavorite, signIn, signInWithGoogle, signOut, signUp, toggleFavorite, user]
+    [favorites, favoritesLoaded, isFavorited, removeFavorite, signIn, signInWithGoogle, signOut, signUp, toggleFavorite, user]
   );
 
   return <AppStoreContext.Provider value={value}>{children}</AppStoreContext.Provider>;

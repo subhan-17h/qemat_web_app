@@ -14,6 +14,12 @@ import { fetchTrendingProducts } from '@/lib/api';
 import { Product } from '@/types/product';
 
 const TRENDING_PREVIEW_LIMIT = 10;
+const TRENDING_CACHE_TTL_MS = 5 * 60 * 1000;
+
+let trendingProductsCache: {
+  products: Product[];
+  cachedAt: number;
+} | null = null;
 
 export default function HomePage() {
   const router = useRouter();
@@ -57,17 +63,44 @@ export default function HomePage() {
 
   useEffect(() => {
     let active = true;
+
     const loadTrending = async () => {
+      const now = Date.now();
+      const cached = trendingProductsCache;
+
+      if (cached) {
+        setTrending(cached.products);
+        setLoading(false);
+      }
+
+      const shouldFetch = !cached || now - cached.cachedAt >= TRENDING_CACHE_TTL_MS;
+      if (!shouldFetch) {
+        return;
+      }
+
+      // Only show shimmer on true cold load (no cache available yet).
+      if (!cached) {
+        setLoading(true);
+      }
+
       try {
         const data = await fetchTrendingProducts({
           limit: TRENDING_PREVIEW_LIMIT,
           matchedProductsCountGt: 3,
           matchedProductsCountLt: 6
         });
-        if (active) setTrending(data);
+        if (active) {
+          setTrending(data);
+          trendingProductsCache = {
+            products: data,
+            cachedAt: Date.now()
+          };
+        }
       } catch (error) {
         console.error('Failed to load trending products.', error);
-        if (active) setTrending([]);
+        if (active && !cached) {
+          setTrending([]);
+        }
       } finally {
         if (active) setLoading(false);
       }

@@ -123,9 +123,12 @@ export default function AIAssistantPage() {
               you can save today!
             </p>
           </Card>
-          <Button loading={loading} size="lg" onClick={runAssistant} fullWidth>
+          <Button loading={loading} size="lg" disabled fullWidth>
             Get My Shopping List
           </Button>
+          <span className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-amber-700">
+            Coming Soon
+          </span>
         </div>
       ) : error ? (
         <EmptyState
