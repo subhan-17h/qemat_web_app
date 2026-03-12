@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 
 import { AppBar } from '@/components/navigation/AppBar';
+import { DesktopSectionHeader } from '@/components/navigation/DesktopSectionHeader';
 import { Button } from '@/components/shared/Button';
 import { Card } from '@/components/shared/Card';
 import { EmptyState } from '@/components/shared/EmptyState';
@@ -76,15 +77,16 @@ export default function StoreProfilePage() {
 
   if (!store) {
     return (
-      <div className="mx-auto w-full max-w-screen-xl px-4">
+      <div className="mx-auto w-full max-w-screen-2xl px-4 lg:px-10 xl:px-12">
         <AppBar title="Store Profile" showBack sticky />
+        <DesktopSectionHeader title="Store Profile" showBack />
         <EmptyState icon={<MapPin className="text-gray-300" size={48} />} title="Store not found" description="Store details are unavailable." />
       </div>
     );
   }
 
   return (
-    <div className="mx-auto w-full max-w-screen-xl px-4 pb-8 lg:px-8">
+    <div className="mx-auto w-full max-w-screen-2xl px-4 pb-8 lg:px-10 xl:px-12">
       <AppBar
         title="Store Profile"
         showBack
@@ -96,6 +98,20 @@ export default function StoreProfilePage() {
             className="rounded-full p-2 text-gray-700 hover:bg-gray-100"
           >
             <Share2 size={18} />
+          </button>
+        }
+      />
+      <DesktopSectionHeader
+        title="Store Profile"
+        subtitle={store.id}
+        showBack
+        rightAction={
+          <button
+            aria-label="Share store"
+            onClick={() => navigator.clipboard.writeText(window.location.href)}
+            className="rounded-full border border-gray-200 bg-white p-2 text-gray-700 transition-colors hover:bg-gray-50"
+          >
+            <Share2 size={17} />
           </button>
         }
       />

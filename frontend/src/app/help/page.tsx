@@ -63,7 +63,7 @@ export default function HelpPage() {
   const [openIndex, setOpenIndex] = useState(0);
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 pb-8 lg:px-8">
+    <div className="mx-auto w-full max-w-4xl px-4 pb-8 lg:px-10 xl:px-12">
       <AppBar title="Help & Support" showBack sticky />
 
       <Card className="section-enter mt-4 rounded-2xl border border-sky-100 bg-gradient-to-br from-sky-50 via-white to-emerald-50 p-4" style={{ '--section-delay': '0ms' } as CSSProperties}>

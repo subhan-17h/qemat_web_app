@@ -54,10 +54,10 @@ export default function ProfilePage() {
   ];
 
   return (
-    <div className="mx-auto w-full max-w-screen-xl px-4 pb-8 lg:px-8">
+    <div className="mx-auto w-full max-w-screen-2xl px-4 pb-8 lg:px-10 xl:px-12">
       <AppBar title="Profile" sticky />
 
-      <Card className="mx-auto mt-4 max-w-xl p-6 text-center">
+      <Card className="mx-auto mt-4 max-w-xl p-6 text-center lg:max-w-4xl">
         <div className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-gradient-to-br from-blue-500 to-green-500 text-white">
           <UserCircle2 size={40} />
         </div>
@@ -65,7 +65,7 @@ export default function ProfilePage() {
         <p className="text-sm text-gray-500">{user?.email ?? 'Sign in to personalize your profile.'}</p>
       </Card>
 
-      <Card className="mx-auto mt-4 max-w-xl rounded-xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-teal-50 to-amber-50 p-3.5">
+      <Card className="mx-auto mt-4 max-w-xl rounded-xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-teal-50 to-amber-50 p-3.5 lg:max-w-4xl">
         <span className="inline-flex rounded-full bg-emerald-200/60 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700">Coming Soon</span>
         <div className="mt-2.5 flex items-start gap-2">
           <span className="mt-0.5 text-emerald-600">
@@ -86,7 +86,7 @@ export default function ProfilePage() {
         </div>
       </Card>
 
-      <Card className="mx-auto mt-4 max-w-xl p-5">
+      <Card className="mx-auto mt-4 max-w-xl p-5 lg:max-w-4xl">
         <h2 className="text-lg font-bold text-gray-900">Settings</h2>
         
 

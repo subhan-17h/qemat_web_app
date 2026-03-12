@@ -2,7 +2,7 @@
 
 import { Search, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import type { CSSProperties } from 'react';
 
 import { AppBar } from '@/components/navigation/AppBar';
@@ -17,10 +17,31 @@ import { Product } from '@/types/product';
 
 const PAGE_SIZE = 40;
 const SHEET_EXIT_MS = 240;
+const SORT_OPTIONS = ['matchPriority', 'priceAsc', 'priceDesc', 'nameAsc'] as const;
+type SortKey = (typeof SORT_OPTIONS)[number];
+
+function getTwoRowShimmerCount(width: number) {
+  if (width >= 1280) return 10; // 5 columns
+  if (width >= 1024) return 8; // 4 columns
+  if (width >= 768) return 6; // 3 columns
+  return 4; // 2 columns
+}
+
+function resolveSelectedStoreParam(value: string | null) {
+  if (!value) return 'All Stores';
+  const match = storeIds.find((store) => store.toLowerCase() === value.toLowerCase());
+  return match ?? 'All Stores';
+}
+
+function resolveSortParam(value: string | null): SortKey {
+  if (!value) return 'matchPriority';
+  const match = SORT_OPTIONS.find((sort) => sort === value);
+  return match ?? 'matchPriority';
+}
 
 function SearchShimmerGrid({ count, prefix }: { count: number; prefix: string }) {
   return (
-    <div className="grid grid-cols-2 gap-3 pt-3 md:grid-cols-3 lg:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 pt-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
       {Array.from({ length: count }).map((_, index) => (
         <div
           key={`${prefix}-${index}`}
@@ -42,7 +63,28 @@ function SearchShimmerGrid({ count, prefix }: { count: number; prefix: string })
   );
 }
 
+function SearchShimmerCard({ itemKey }: { itemKey: string }) {
+  return (
+    <div
+      key={itemKey}
+      className="h-[218px] overflow-hidden rounded-[1.3rem] border border-gray-200/70 bg-white p-0 shadow-[0_9px_14px_-11px_rgba(15,23,42,0.40)]"
+    >
+      <div className="search-modern-shimmer h-28 w-full" />
+      <div className="space-y-2 p-2.5">
+        <div className="search-modern-shimmer h-4 w-11/12 rounded-md" />
+        <div className="search-modern-shimmer h-4 w-8/12 rounded-md" />
+        <div className="search-modern-shimmer h-4 w-7/12 rounded-md" />
+        <div className="mt-1 flex items-center justify-between">
+          <div className="search-modern-shimmer h-4 w-16 rounded-md" />
+          <div className="search-modern-shimmer h-4 w-14 rounded-full" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function SearchPage() {
+  const pathname = usePathname();
   const router = useRouter();
   const params = useSearchParams();
   const { isFavorited, isFavoriteSyncing, toggleFavorite } = useAppStore();
@@ -63,8 +105,9 @@ export default function SearchPage() {
   const [filterTriggerBurst, setFilterTriggerBurst] = useState(false);
   const [storeChipPillStyle, setStoreChipPillStyle] = useState<CSSProperties>({ opacity: 0 });
   const [sortChipPillStyle, setSortChipPillStyle] = useState<CSSProperties>({ opacity: 0 });
-  const [selectedStore, setSelectedStore] = useState<(typeof storeIds)[number]>('All Stores');
-  const [sortBy, setSortBy] = useState<'relevance' | 'matchPriority' | 'priceAsc' | 'priceDesc' | 'nameAsc'>('matchPriority');
+  const [selectedStore, setSelectedStore] = useState<(typeof storeIds)[number]>(() => resolveSelectedStoreParam(params.get('store')));
+  const [sortBy, setSortBy] = useState<SortKey>(() => resolveSortParam(params.get('sort')));
+  const [shimmerCount, setShimmerCount] = useState(() => (typeof window === 'undefined' ? 10 : getTwoRowShimmerCount(window.innerWidth)));
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -90,6 +133,19 @@ export default function SearchPage() {
   }, [query]);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const syncShimmerCount = () => {
+      setShimmerCount(getTwoRowShimmerCount(window.innerWidth));
+    };
+
+    syncShimmerCount();
+    window.addEventListener('resize', syncShimmerCount);
+    return () => {
+      window.removeEventListener('resize', syncShimmerCount);
+    };
+  }, []);
+
+  useEffect(() => {
     return () => {
       if (searchCloseTimerRef.current) clearTimeout(searchCloseTimerRef.current);
       if (filtersCloseTimerRef.current) clearTimeout(filtersCloseTimerRef.current);
@@ -97,6 +153,51 @@ export default function SearchPage() {
       if (filterTriggerTimerRef.current) clearTimeout(filterTriggerTimerRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    const nextStore = resolveSelectedStoreParam(params.get('store'));
+    const nextSort = resolveSortParam(params.get('sort'));
+    setSelectedStore((current) => (current === nextStore ? current : nextStore));
+    setSortBy((current) => (current === nextSort ? current : nextSort));
+  }, [params]);
+
+  const updateFilterParams = useCallback(
+    (nextStore: (typeof storeIds)[number], nextSort: SortKey) => {
+      const nextParams = new URLSearchParams(params.toString());
+
+      if (nextStore === 'All Stores') {
+        nextParams.delete('store');
+      } else {
+        nextParams.set('store', nextStore);
+      }
+
+      if (nextSort === 'matchPriority') {
+        nextParams.delete('sort');
+      } else {
+        nextParams.set('sort', nextSort);
+      }
+
+      const nextHref = nextParams.toString() ? `${pathname}?${nextParams.toString()}` : pathname;
+      router.replace(nextHref, { scroll: false });
+    },
+    [params, pathname, router]
+  );
+
+  const handleStoreChange = useCallback(
+    (nextStore: (typeof storeIds)[number]) => {
+      setSelectedStore(nextStore);
+      updateFilterParams(nextStore, sortBy);
+    },
+    [sortBy, updateFilterParams]
+  );
+
+  const handleSortChange = useCallback(
+    (nextSort: SortKey) => {
+      setSortBy(nextSort);
+      updateFilterParams(selectedStore, nextSort);
+    },
+    [selectedStore, updateFilterParams]
+  );
 
   const type = pharma ? 'pharma' : 'grocery';
   const storeFilter = selectedStore !== 'All Stores' ? selectedStore : undefined;
@@ -429,7 +530,7 @@ export default function SearchPage() {
   }, [category, debouncedQuery]);
 
   return (
-    <div className="mx-auto w-full max-w-screen-xl px-4 pb-6 lg:px-8">
+    <div className="mx-auto w-full max-w-screen-2xl px-4 pb-6 lg:px-10 xl:px-12">
       <AppBar
         title={categoryTitle ?? (browsing ? 'Browse' : 'Search')}
         showBack
@@ -453,9 +554,9 @@ export default function SearchPage() {
       />
 
       {loading ? (
-        <SearchShimmerGrid count={8} prefix="search-shimmer" />
+        <SearchShimmerGrid count={shimmerCount} prefix="search-shimmer" />
       ) : products.length ? (
-        <div className="search-scroll-grid grid grid-cols-2 gap-x-3 gap-y-4 pt-3 md:grid-cols-3 md:gap-y-5 lg:grid-cols-4">
+        <div className="search-scroll-grid grid grid-cols-2 gap-x-3 gap-y-4 pt-3 md:grid-cols-3 md:gap-y-5 lg:gap-x-4 lg:gap-y-6 xl:grid-cols-5">
           {products.map((product, index) => (
             <div
               key={product.productId}
@@ -489,25 +590,28 @@ export default function SearchPage() {
               </div>
             </div>
           ))}
+
+          {loadingMore
+            ? Array.from({ length: shimmerCount }).map((_, index) => (
+                <SearchShimmerCard key={`search-more-shimmer-${index}`} itemKey={`search-more-shimmer-${index}`} />
+              ))
+            : null}
         </div>
       ) : (
         <EmptyState icon={<Search className="text-gray-300" size={48} />} title="No products found" description={emptyDescription} />
       )}
 
       <div ref={sentinelRef} className="h-8" />
-      {loadingMore ? (
-        <SearchShimmerGrid count={4} prefix="search-more-shimmer" />
-      ) : null}
 
       <button
         aria-label="Open search"
         onClick={openSearch}
         className={cn(
-          'search-fab fixed bottom-6 right-5 z-40 grid h-16 w-16 place-items-center rounded-full border border-white/20 bg-black/20 text-black shadow-[inset_0_1px_0_rgba(255,255,255,0.35)] backdrop-blur-lg',
+          'search-fab fixed bottom-6 right-5 z-40 grid h-16 w-16 place-items-center rounded-full border border-white/26 bg-white/24 text-gray-900 shadow-[0_20px_36px_-24px_rgba(15,23,42,0.7),inset_0_1px_0_rgba(255,255,255,0.42)] backdrop-blur-xl lg:bottom-8 lg:right-8 lg:h-14 lg:w-14',
           searchFabBurst ? 'search-fab-burst' : ''
         )}
       >
-        <Search size={34} strokeWidth={2.2} />
+        <Search size={30} strokeWidth={2.2} />
       </button>
 
       {filtersOpen ? (
@@ -516,7 +620,7 @@ export default function SearchPage() {
             className={cn('filters-overlay fixed inset-0 z-50 bg-black/12', filtersClosing ? 'is-leaving' : '')}
             onClick={closeFilters}
           />
-          <div className="fixed right-4 top-[4.25rem] z-[60] w-[calc(100%-2rem)] max-w-sm">
+          <div className="fixed right-4 top-[4.25rem] z-[60] w-[calc(100%-2rem)] max-w-sm lg:right-10 lg:top-[6.25rem] xl:right-12">
             <div
               className={cn(
                 'filters-sheet rounded-[1.35rem] border border-white/45 bg-white/24 p-3 backdrop-blur-2xl',
@@ -539,7 +643,7 @@ export default function SearchPage() {
                     <button
                       key={store}
                       ref={registerStoreChip(store)}
-                      onClick={() => setSelectedStore(store)}
+                      onClick={() => handleStoreChange(store)}
                       data-active={selectedStore === store}
                       className={cn(
                         'filter-chip-btn whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium backdrop-blur-xl transition-colors',
@@ -567,7 +671,7 @@ export default function SearchPage() {
                     <button
                       key={option.id}
                       ref={registerSortChip(option.id)}
-                      onClick={() => setSortBy(option.id as typeof sortBy)}
+                      onClick={() => handleSortChange(option.id as SortKey)}
                       data-active={sortBy === option.id}
                       className={cn(
                         'filter-chip-btn rounded-full px-3 py-1.5 text-xs font-medium transition-colors',
@@ -589,7 +693,7 @@ export default function SearchPage() {
       {searchOpen ? (
         <>
           <div className={cn('search-overlay fixed inset-0 z-50 bg-black/12', searchClosing ? 'is-leaving' : '')} onClick={closeSearch} />
-          <div className="fixed left-1/2 top-[4.2rem] z-[60] w-[calc(100%-2rem)] max-w-xl -translate-x-1/2">
+          <div className="fixed left-1/2 top-[4.2rem] z-[60] w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 lg:top-[6.2rem]">
             <div onClick={(event) => event.stopPropagation()}>
               <div
                 className={cn(

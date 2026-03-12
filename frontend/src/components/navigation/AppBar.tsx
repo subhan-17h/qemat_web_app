@@ -23,7 +23,7 @@ export function AppBar({
   return (
     <header
       className={cn(
-        'z-40 mt-3 flex h-12 items-center justify-between rounded-[1.25rem] border border-gray-200/65 bg-white/72 px-3.5 shadow-[0_6px_16px_rgba(15,23,42,0.06)] backdrop-blur-xl md:h-14',
+        'z-40 mt-3 flex h-12 items-center justify-between rounded-[1.25rem] border border-gray-200/65 bg-white/72 px-3.5 shadow-[0_6px_16px_rgba(15,23,42,0.06)] backdrop-blur-xl md:h-14 lg:hidden',
         sticky ? 'sticky top-3' : 'relative'
       )}
     >

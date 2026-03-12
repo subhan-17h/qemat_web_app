@@ -11,13 +11,8 @@ const urdu = localFont({
   variable: '--font-urdu',
   src: [
     {
-      path: '../../public/assets/fonts/NotoNastaliqUrdu-Regular.ttf',
+      path: '../../public/assets/fonts/Firoz Unicode Firoz Unicode.ttf',
       weight: '400',
-      style: 'normal'
-    },
-    {
-      path: '../../public/assets/fonts/NotoNastaliqUrdu-SemiBold.ttf',
-      weight: '600',
       style: 'normal'
     }
   ],

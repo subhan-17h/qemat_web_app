@@ -85,7 +85,7 @@ export function ProductCard({
   }
 
   return (
-    <Card className={cn('overflow-hidden p-0', className)}>
+    <Card className={cn('overflow-hidden p-0', compact && homePopular ? 'min-h-[246px]' : '', className)}>
       <div className={cn('relative w-full', compact ? 'h-24' : 'h-32')}>
         <SafeImage
           src={product.imageUrl}
@@ -107,14 +107,19 @@ export function ProductCard({
           </button>
         ) : null}
       </div>
-      <div className={cn('space-y-2', compact ? 'p-2.5' : 'p-3')}>
-        <h3 className={cn('line-clamp-2 font-semibold text-gray-900', compact ? 'min-h-0 text-sm' : 'min-h-10 text-sm md:text-base')}>
+      <div className={cn('space-y-2', compact ? 'p-2.5' : 'p-3', homePopular ? 'flex flex-1 flex-col gap-1.5 space-y-0' : '')}>
+        <h3
+          className={cn(
+            'line-clamp-2 font-semibold text-gray-900',
+            compact ? 'min-h-[2.5rem] text-sm leading-5' : 'min-h-10 text-sm md:text-base'
+          )}
+        >
           {product.name}
         </h3>
         <p className={cn('font-bold text-brand-700', compact ? 'text-base' : 'text-lg')}>{formatPKR(product.price)}</p>
         <p className={cn('text-gray-500', compact ? 'text-[11px]' : 'text-xs')}>{product.matchedProductsCount}+ similar products</p>
         {homePopular ? (
-          <Link href={`/product/${product.productId}`} className="block">
+          <Link href={`/product/${product.productId}`} className="mt-auto block">
             <Button size="sm" className={cn('w-full', compact ? 'h-9 text-sm' : '')}>
               Compare
             </Button>

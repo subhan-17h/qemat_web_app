@@ -5,7 +5,9 @@ import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 
 import { BottomNav } from '@/components/navigation/BottomNav';
+import { DesktopTopNav } from '@/components/navigation/DesktopTopNav';
 import { Sidebar } from '@/components/navigation/Sidebar';
+import { getRoutePresentation } from '@/lib/route-presentation';
 import { cn } from '@/lib/utils';
 
 const authRoutes = ['/sign-in', '/sign-up'];
@@ -13,8 +15,9 @@ const mainNavRoutes = new Set(['/', '/favorites', '/ai-assistant', '/profile']);
 
 export function Chrome({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const hideNavigation = authRoutes.some((route) => pathname.startsWith(route));
-  const showBottomNav = !hideNavigation && mainNavRoutes.has(pathname);
+  const routePresentation = getRoutePresentation(pathname);
+  const hideMobileNavigation = authRoutes.some((route) => pathname.startsWith(route));
+  const showBottomNav = !hideMobileNavigation && mainNavRoutes.has(pathname);
 
   useEffect(() => {
     const updateViewportVars = () => {
@@ -47,13 +50,14 @@ export function Chrome({ children }: { children: ReactNode }) {
 
   return (
     <>
-      <div className="app-shell mx-auto flex max-w-[1600px]">
-        {!hideNavigation ? <Sidebar /> : null}
+      {routePresentation.showDesktopTopNav ? <DesktopTopNav /> : null}
+      <div className="app-shell mx-auto flex w-full max-w-[1680px]">
+        {routePresentation.showDesktopSidebar ? <Sidebar /> : null}
         <main
           className={cn(
-            'w-full lg:pb-0',
+            'w-full min-w-0 lg:pb-0',
             pathname === '/'
-              ? 'overflow-hidden pb-16'
+              ? 'overflow-hidden pb-16 lg:overflow-y-auto lg:pb-8'
               : pathname.startsWith('/search')
                 ? 'app-scroll pb-8'
                 : showBottomNav
@@ -61,7 +65,9 @@ export function Chrome({ children }: { children: ReactNode }) {
                   : 'app-scroll pb-8'
           )}
         >
-          {children}
+          <div className="min-h-full lg:px-1 lg:pb-2 lg:pt-[calc(var(--desktop-top-nav-height)+0.25rem)] xl:px-2">
+            {children}
+          </div>
         </main>
       </div>
       {showBottomNav ? <BottomNav /> : null}

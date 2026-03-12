@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
 import { AppBar } from '@/components/navigation/AppBar';
+import { DesktopSectionHeader } from '@/components/navigation/DesktopSectionHeader';
 import { BottomSheet } from '@/components/shared/BottomSheet';
 import { Button } from '@/components/shared/Button';
 import { Card } from '@/components/shared/Card';
@@ -64,8 +65,9 @@ export default function ProductDetailsPage() {
 
   if (!loading && !product) {
     return (
-      <div className="mx-auto w-full max-w-screen-xl px-4">
+      <div className="mx-auto w-full max-w-screen-2xl px-4 lg:px-10 xl:px-12">
         <AppBar title="Product Details" showBack sticky />
+        <DesktopSectionHeader title="Product Details" showBack />
         <EmptyState
           icon={<Heart className="text-gray-300" size={48} />}
           title="Product not found"
@@ -102,7 +104,7 @@ export default function ProductDetailsPage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-screen-xl px-4 pb-8 lg:px-8">
+    <div className="mx-auto w-full max-w-screen-2xl px-4 pb-8 lg:px-10 xl:px-12">
       <AppBar
         title="Product Details"
         showBack
@@ -119,6 +121,32 @@ export default function ProductDetailsPage() {
             >
               <Heart
                 size={20}
+                className={product && isFavorited(product.productId) ? 'fill-red-600 text-red-600' : ''}
+              />
+            </button>
+          </div>
+        }
+      />
+      <DesktopSectionHeader
+        title="Product Details"
+        subtitle={product?.storeId}
+        showBack
+        rightAction={
+          <div className="flex items-center gap-1">
+            <button
+              aria-label="Share product"
+              onClick={handleShare}
+              className="rounded-full border border-gray-200 bg-white p-2 text-gray-700 transition-colors hover:bg-gray-50"
+            >
+              <Share2 size={17} />
+            </button>
+            <button
+              aria-label="Favorite product"
+              onClick={handleToggleFavorite}
+              className={`rounded-full border border-gray-200 bg-white p-2 text-gray-700 transition-colors hover:bg-gray-50 ${product && isFavoriteSyncing(product.productId) ? 'favorite-sync-pulse' : ''}`}
+            >
+              <Heart
+                size={18}
                 className={product && isFavorited(product.productId) ? 'fill-red-600 text-red-600' : ''}
               />
             </button>

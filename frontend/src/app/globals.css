@@ -6,6 +6,7 @@
   color-scheme: light;
   --app-dvh: 100dvh;
   --browser-bar-offset: 0px;
+  --desktop-top-nav-height: 5.5rem;
 }
 
 html,
@@ -21,6 +22,12 @@ body {
 .app-shell {
   height: var(--app-dvh);
   overflow: hidden;
+}
+
+@media (min-width: 1024px) {
+  .app-shell {
+    padding-inline: 0.25rem;
+  }
 }
 
 .app-scroll {
@@ -165,6 +172,14 @@ body {
     animation: profile-open-new 460ms cubic-bezier(0.16, 0.95, 0.22, 1);
   }
 
+  html[data-nav-intent='desktop-deep-open']::view-transition-old(root) {
+    animation: desktop-deep-open-old 280ms cubic-bezier(0.2, 0.84, 0.2, 1);
+  }
+
+  html[data-nav-intent='desktop-deep-open']::view-transition-new(root) {
+    animation: desktop-deep-open-new 420ms cubic-bezier(0.2, 0.92, 0.22, 1);
+  }
+
   @keyframes browse-open-old {
     0% {
       opacity: 1;
@@ -219,6 +234,32 @@ body {
     100% {
       opacity: 1;
       transform: translateY(0) scale(1);
+      filter: blur(0);
+    }
+  }
+
+  @keyframes desktop-deep-open-old {
+    0% {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+      filter: blur(0);
+    }
+    100% {
+      opacity: 0;
+      transform: scale(0.975) translateY(-8px);
+      filter: blur(6px);
+    }
+  }
+
+  @keyframes desktop-deep-open-new {
+    0% {
+      opacity: 0;
+      transform: scale(1.018) translateY(12px);
+      filter: blur(10px);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1) translateY(0);
       filter: blur(0);
     }
   }

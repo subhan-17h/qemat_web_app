@@ -67,7 +67,7 @@ const sections = [
 
 export default function AboutPage() {
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 pb-8 lg:px-8">
+    <div className="mx-auto w-full max-w-4xl px-4 pb-8 lg:px-10 xl:px-12">
       <AppBar title="About Qemat" showBack sticky />
 
       <Card className="about-enter mt-4 rounded-2xl border border-gray-200 bg-gradient-to-br from-white to-gray-50 p-4" style={{ '--section-delay': '0ms' } as CSSProperties}>

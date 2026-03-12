@@ -21,7 +21,7 @@ export default function GroceryCategoriesPage() {
   }, []);
 
   return (
-    <div className="mx-auto w-full max-w-screen-xl px-4 pb-8 lg:px-8">
+    <div className="mx-auto w-full max-w-screen-2xl px-4 pb-8 lg:px-10 xl:px-12">
       <AppBar title="Grocery Foods" showBack sticky />
 
       <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
