@@ -273,8 +273,8 @@ export async function fetchFavoriteProducts(token: string): Promise<Product[]> {
   return (response.products ?? []).map((item) => normalizeProduct(item));
 }
 
-export async function toggleFavoriteOnBackend(token: string, productId: string): Promise<void> {
-  await request<{ added: boolean; productId: string }>(`/api/favorites/${encodeURIComponent(productId)}`, {
+export async function toggleFavoriteOnBackend(token: string, productId: string): Promise<{ added: boolean; productId: string }> {
+  return request<{ added: boolean; productId: string }>(`/api/favorites/${encodeURIComponent(productId)}`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`

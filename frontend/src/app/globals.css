@@ -43,6 +43,31 @@ body {
   scrollbar-width: none;
 }
 
+.favorite-sync-pulse {
+  animation: favorite-sync-pulse 0.9s cubic-bezier(0.2, 0.9, 0.2, 1) infinite;
+}
+
+@keyframes favorite-sync-pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.18);
+  }
+  50% {
+    transform: scale(1.06);
+    box-shadow: 0 0 0 7px rgba(239, 68, 68, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .favorite-sync-pulse {
+    animation: none !important;
+  }
+}
+
 @supports (view-transition-name: root) {
   html[data-tab-direction='right']::view-transition-old(root) {
     animation: page-out-left 240ms cubic-bezier(0.2, 0.8, 0.2, 1);

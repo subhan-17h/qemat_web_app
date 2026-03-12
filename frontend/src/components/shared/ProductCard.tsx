@@ -17,6 +17,7 @@ export function ProductCard({
   homePopular,
   showFavorite,
   favorited,
+  favoriteSyncing,
   onFavoriteToggle,
   className
 }: {
@@ -26,6 +27,7 @@ export function ProductCard({
   homePopular?: boolean;
   showFavorite?: boolean;
   favorited?: boolean;
+  favoriteSyncing?: boolean;
   onFavoriteToggle?: () => void;
   className?: string;
 }) {
@@ -56,9 +58,12 @@ export function ProductCard({
                 event.stopPropagation();
                 onFavoriteToggle?.();
               }}
-              className="absolute right-2 top-2 grid h-9 w-9 place-items-center rounded-full border border-gray-200 bg-white text-gray-700 shadow-sm"
+              className={cn(
+                'absolute right-2 top-2 grid h-9 w-9 place-items-center rounded-full border border-gray-200 bg-white text-gray-700 shadow-sm',
+                favoriteSyncing ? 'favorite-sync-pulse' : ''
+              )}
             >
-              <Heart size={16} className={favorited ? 'fill-current text-red-600' : ''} />
+              <Heart size={16} className={cn(favorited ? 'fill-current text-red-600' : '', favoriteSyncing ? 'opacity-95' : '')} />
             </button>
           ) : null}
         </div>
@@ -96,9 +101,9 @@ export function ProductCard({
           <button
             aria-label="Toggle favorite"
             onClick={onFavoriteToggle}
-            className="absolute right-2 top-2 rounded-full bg-white/90 p-1 text-red-600"
+            className={cn('absolute right-2 top-2 rounded-full bg-white/90 p-1 text-red-600', favoriteSyncing ? 'favorite-sync-pulse' : '')}
           >
-            <Heart size={16} className={favorited ? 'fill-current' : ''} />
+            <Heart size={16} className={cn(favorited ? 'fill-current' : '', favoriteSyncing ? 'opacity-95' : '')} />
           </button>
         ) : null}
       </div>

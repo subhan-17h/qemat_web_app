@@ -18,7 +18,7 @@ import { Product } from '@/types/product';
 export default function ProductDetailsPage() {
   const router = useRouter();
   const params = useParams<{ productId: string }>();
-  const { isFavorited, toggleFavorite } = useAppStore();
+  const { isFavorited, isFavoriteSyncing, toggleFavorite } = useAppStore();
 
   const [promptSignIn, setPromptSignIn] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -78,7 +78,7 @@ export default function ProductDetailsPage() {
   const handleToggleFavorite = async () => {
     if (!product) return;
     try {
-      await toggleFavorite(product.productId);
+      await toggleFavorite(product.productId, product);
     } catch {
       setPromptSignIn(true);
     }
@@ -112,8 +112,15 @@ export default function ProductDetailsPage() {
             <button aria-label="Share product" onClick={handleShare} className="rounded-full p-2 text-gray-700 hover:bg-gray-100">
               <Share2 size={18} />
             </button>
-            <button aria-label="Favorite product" onClick={handleToggleFavorite} className="rounded-full p-2 text-gray-700 hover:bg-gray-100">
-              <Heart size={20} className={product && isFavorited(product.productId) ? 'fill-red-600 text-red-600' : ''} />
+            <button
+              aria-label="Favorite product"
+              onClick={handleToggleFavorite}
+              className={`rounded-full p-2 text-gray-700 hover:bg-gray-100 ${product && isFavoriteSyncing(product.productId) ? 'favorite-sync-pulse' : ''}`}
+            >
+              <Heart
+                size={20}
+                className={product && isFavorited(product.productId) ? 'fill-red-600 text-red-600' : ''}
+              />
             </button>
           </div>
         }

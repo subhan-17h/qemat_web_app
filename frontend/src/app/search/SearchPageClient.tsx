@@ -45,7 +45,7 @@ function SearchShimmerGrid({ count, prefix }: { count: number; prefix: string })
 export default function SearchPage() {
   const router = useRouter();
   const params = useSearchParams();
-  const { isFavorited, toggleFavorite } = useAppStore();
+  const { isFavorited, isFavoriteSyncing, toggleFavorite } = useAppStore();
 
   const category = params.get('category');
   const pharma = params.get('pharma') === 'true';
@@ -414,9 +414,9 @@ export default function SearchPage() {
     }, SHEET_EXIT_MS);
   };
 
-  const handleToggleFavorite = async (productId: string) => {
+  const handleToggleFavorite = async (product: Product) => {
     try {
-      await toggleFavorite(productId);
+      await toggleFavorite(product.productId, product);
     } catch {
       router.push('/sign-in');
     }
@@ -483,7 +483,8 @@ export default function SearchPage() {
                   searchCompact
                   showFavorite
                   favorited={isFavorited(product.productId)}
-                  onFavoriteToggle={() => handleToggleFavorite(product.productId)}
+                  favoriteSyncing={isFavoriteSyncing(product.productId)}
+                  onFavoriteToggle={() => handleToggleFavorite(product)}
                 />
               </div>
             </div>

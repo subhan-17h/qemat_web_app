@@ -12,17 +12,10 @@ import { Card } from '@/components/shared/Card';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { SafeImage } from '@/components/shared/SafeImage';
 import { fetchFavoriteProducts } from '@/lib/api';
+import { isFavoritesProductsCacheFresh, patchFavoritesProductsCache, readFavoritesProductsCache, writeFavoritesProductsCache } from '@/lib/favorites-products-cache';
 import { formatPKR } from '@/lib/formatters';
 import { useAppStore } from '@/store/app-store';
 import { Product } from '@/types/product';
-
-const FAVORITES_CACHE_TTL_MS = 5 * 60 * 1000;
-
-let favoritesProductsCache: {
-  token: string;
-  products: Product[];
-  cachedAt: number;
-} | null = null;
 
 function hasSameFavoriteIds(products: Product[], favoriteIds: string[]) {
   if (products.length !== favoriteIds.length) return false;
@@ -74,41 +67,27 @@ export default function FavoritesPage() {
       }
 
       const now = Date.now();
-      const cached = favoritesProductsCache;
-      const hasCacheForUser = Boolean(cached && cached.token === user.token);
-      const cachedForUser = hasCacheForUser ? cached : null;
+      const cachedForUser = readFavoritesProductsCache(user.token);
+      const hasCacheForUser = Boolean(cachedForUser);
       const cachedProducts = cachedForUser?.products ?? [];
 
       // Always render cached rows immediately on remount to avoid shimmer between tab/page shifts.
       if (hasCacheForUser) {
-        setFavoriteProducts(cachedProducts);
+        const projectedCachedProducts = favoritesLoaded
+          ? cachedProducts.filter((item) => favorites.includes(item.productId))
+          : cachedProducts;
+        setFavoriteProducts(projectedCachedProducts);
       }
 
       // Avoid false "No favorites yet" before store favorite IDs are hydrated.
-      if (!favoritesLoaded) {
-        setLoading(!hasCacheForUser);
-        return;
-      }
-
-      if (favorites.length === 0) {
-        const emptyProducts: Product[] = [];
-        setFavoriteProducts(emptyProducts);
-        favoritesProductsCache = {
-          token: user.token,
-          products: emptyProducts,
-          cachedAt: Date.now()
-        };
-        setLoading(false);
-        return;
-      }
-
-      if (cachedForUser) {
+      if (cachedForUser && favoritesLoaded) {
+        const projectedCachedProducts = cachedForUser.products.filter((item) => favorites.includes(item.productId));
         const cacheUsable =
-          now - cachedForUser.cachedAt < FAVORITES_CACHE_TTL_MS &&
-          hasSameFavoriteIds(cachedForUser.products, favorites);
+          isFavoritesProductsCacheFresh(cachedForUser, now) &&
+          hasSameFavoriteIds(projectedCachedProducts, favorites);
 
         if (cacheUsable) {
-          setFavoriteProducts(cachedForUser.products);
+          setFavoriteProducts(projectedCachedProducts);
           setLoading(false);
           return;
         }
@@ -120,11 +99,7 @@ export default function FavoritesPage() {
         const products = await fetchFavoriteProducts(user.token);
         if (active) {
           setFavoriteProducts(products);
-          favoritesProductsCache = {
-            token: user.token,
-            products,
-            cachedAt: Date.now()
-          };
+          writeFavoritesProductsCache(user.token, products);
         }
       } catch (error) {
         console.error('Failed to load favorite products.', error);
@@ -246,11 +221,7 @@ export default function FavoritesPage() {
     setFavoriteProducts((current) => {
       const next = current.filter((item) => item.productId !== removeTarget);
       if (user?.token) {
-        favoritesProductsCache = {
-          token: user.token,
-          products: next,
-          cachedAt: Date.now()
-        };
+        patchFavoritesProductsCache(user.token, () => next);
       }
       return next;
     });
