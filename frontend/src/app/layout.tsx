@@ -20,8 +20,20 @@ const urdu = localFont({
 });
 
 export const metadata: Metadata = {
-  title: 'Qemat Web App',
-  description: 'Community-driven grocery and pharma price comparison app.'
+  title: 'Qemat',
+  description: 'Community-driven grocery and pharma price comparison app.',
+  applicationName: 'Qemat',
+  manifest: '/manifest.webmanifest',
+  icons: {
+    icon: [{ url: '/assets/logo/logo.png', type: 'image/png' }],
+    shortcut: [{ url: '/assets/logo/logo.png', type: 'image/png' }],
+    apple: [{ url: '/assets/logo/logo.png', type: 'image/png' }]
+  },
+  appleWebApp: {
+    title: 'Qemat',
+    statusBarStyle: 'default',
+    capable: true
+  }
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
