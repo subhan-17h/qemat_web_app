@@ -61,21 +61,15 @@ export function DesktopTopNav() {
                   <Home size={14} />
                   Back to Home
                 </button>
-              ) : user ? (
-                <Link
-                  href="/profile"
-                  className="inline-flex items-center gap-2 rounded-full border border-emerald-200/80 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition-colors hover:bg-emerald-100"
-                >
-                  <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                  {user.name.split(' ')[0] ?? 'Signed In'}
-                </Link>
               ) : (
-                <Link
-                  href="/sign-in"
-                  className="rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 transition-colors hover:bg-gray-50"
-                >
-                  Sign In
-                </Link>
+                !user ? (
+                  <Link
+                    href="/sign-in"
+                    className="rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 transition-colors hover:bg-gray-50"
+                  >
+                    Sign In
+                  </Link>
+                ) : null
               )}
             </div>
           </div>

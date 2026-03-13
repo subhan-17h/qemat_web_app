@@ -1,11 +1,10 @@
 'use client';
 
-import { Bell, Clock3, Heart, Home, MapPin, Search, Settings, Share2, Store, Trophy, UserCircle2 } from 'lucide-react';
+import { ArrowLeft, Heart, Settings, Share2, Store, Trophy, UserCircle2 } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 import { MouseEvent as ReactMouseEvent, useEffect, useMemo, useState } from 'react';
 
 import { AppBar } from '@/components/navigation/AppBar';
-import { DesktopSectionHeader } from '@/components/navigation/DesktopSectionHeader';
 import { BottomSheet } from '@/components/shared/BottomSheet';
 import { Button } from '@/components/shared/Button';
 import { Card } from '@/components/shared/Card';
@@ -17,10 +16,8 @@ import { useAppStore } from '@/store/app-store';
 import { Product } from '@/types/product';
 
 const desktopSidebarItems = [
-  { key: 'home', label: 'Home', icon: Home, href: '/', active: false },
-  { key: 'favorites', label: 'Favorites', icon: Heart, href: '/favorites', active: false },
-  { key: 'alerts', label: 'Alerts', icon: Bell, href: '/search?browse=true', active: false },
-  { key: 'history', label: 'Price History', icon: Clock3, href: null, active: true }
+  { key: 'back', label: 'Go Back', icon: ArrowLeft, href: null, active: false, action: 'back' },
+  { key: 'favorites', label: 'Favorites', icon: Heart, href: '/favorites', active: false, action: null }
 ] as const;
 
 export default function ProductDetailsPage() {
@@ -60,6 +57,25 @@ export default function ProductDetailsPage() {
     };
   }, [params.productId]);
 
+  useEffect(() => {
+    const scrollToTop = () => {
+      const scrollContainer = document.querySelector('main.app-scroll') as HTMLElement | null;
+      if (scrollContainer) {
+        scrollContainer.scrollTop = 0;
+      }
+      window.scrollTo({ top: 0, behavior: 'auto' });
+    };
+
+    scrollToTop();
+    const raf = window.requestAnimationFrame(scrollToTop);
+    const settleTimer = window.setTimeout(scrollToTop, 120);
+
+    return () => {
+      window.cancelAnimationFrame(raf);
+      window.clearTimeout(settleTimer);
+    };
+  }, [params.productId]);
+
   const cheapest = useMemo(() => {
     if (!matches.length) return null;
     return matches.reduce((lowest, current) => (current.price < lowest.price ? current : lowest), matches[0]);
@@ -82,7 +98,6 @@ export default function ProductDetailsPage() {
     return (
       <div className="mx-auto w-full max-w-screen-2xl px-4 lg:px-10 xl:px-12">
         <AppBar title="Product Details" showBack sticky />
-        <DesktopSectionHeader title="Product Details" showBack />
         <EmptyState
           icon={<Heart className="text-gray-300" size={48} />}
           title="Product not found"
@@ -178,32 +193,6 @@ export default function ProductDetailsPage() {
           </div>
         }
       />
-      <DesktopSectionHeader
-        title="Product Details"
-        subtitle={product?.storeId}
-        showBack
-        rightAction={
-          <div className="flex items-center gap-1">
-            <button
-              aria-label="Share product"
-              onClick={handleShare}
-              className="rounded-full border border-gray-200 bg-white p-2 text-gray-700 transition-colors hover:bg-gray-50"
-            >
-              <Share2 size={17} />
-            </button>
-            <button
-              aria-label="Favorite product"
-              onClick={handleToggleFavorite}
-              className={`rounded-full border border-gray-200 bg-white p-2 text-gray-700 transition-colors hover:bg-gray-50 ${product && isFavoriteSyncing(product.productId) ? 'favorite-sync-pulse' : ''}`}
-            >
-              <Heart
-                size={18}
-                className={product && isFavorited(product.productId) ? 'fill-red-600 text-red-600' : ''}
-              />
-            </button>
-          </div>
-        }
-      />
 
       {loading || !product ? (
         <>
@@ -258,27 +247,32 @@ export default function ProductDetailsPage() {
             </section>
           </div>
 
-          <div className="product-desktop-shell hidden lg:block lg:mt-4">
-            <div className="grid gap-5 lg:grid-cols-[240px_minmax(0,1fr)_300px] xl:grid-cols-[240px_minmax(0,1fr)_340px]">
-              <aside className="product-desktop-panel p-4">
-                <div className="details-modern-shimmer h-16 w-16 rounded-2xl" />
-                <div className="mt-6 space-y-2">
-                  {Array.from({ length: 4 }).map((_, index) => (
+          <div className="product-desktop-shell hidden lg:block lg:mt-2">
+            <div className="grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)_280px] xl:grid-cols-[220px_minmax(0,1fr)_320px]">
+              <aside className="product-desktop-panel product-desktop-sidebar sticky top-3 self-start p-3.5">
+                <div className="space-y-2">
+                  {Array.from({ length: 2 }).map((_, index) => (
                     <div key={`sidebar-nav-shimmer-${index}`} className="details-modern-shimmer h-11 w-full rounded-2xl" />
                   ))}
                 </div>
-                <div className="mt-10 details-modern-shimmer h-24 w-full rounded-2xl" />
+
+                <div className="mt-auto rounded-2xl border border-white/55 bg-white/70 p-2.5 backdrop-blur-md">
+                  <div className="flex items-center gap-2.5">
+                    <div className="details-modern-shimmer h-10 w-10 rounded-full" />
+                    <div className="min-w-0 flex-1 space-y-1.5">
+                      <div className="details-modern-shimmer h-3.5 w-24 rounded-md" />
+                      <div className="details-modern-shimmer h-3 w-12 rounded-md" />
+                    </div>
+                    <div className="details-modern-shimmer h-8 w-8 rounded-full" />
+                  </div>
+                </div>
               </aside>
 
-              <section className="space-y-5">
-                <div className="product-desktop-panel flex items-center gap-3 px-4 py-3">
-                  <div className="details-modern-shimmer h-5 w-5 rounded-full" />
-                  <div className="details-modern-shimmer h-6 w-64 rounded-xl" />
-                </div>
-
-                <Card className="product-desktop-panel p-5">
-                  <div className="grid grid-cols-[220px_minmax(0,1fr)] gap-6">
-                    <div className="details-modern-shimmer h-64 rounded-3xl" />
+              <section className="space-y-4">
+                <Card className="product-desktop-panel relative p-4">
+                  <div className="details-modern-shimmer absolute right-3 top-3 h-9 w-9 rounded-full" />
+                  <div className="grid grid-cols-[190px_minmax(0,1fr)] gap-4">
+                    <div className="details-modern-shimmer h-56 rounded-3xl" />
                     <div className="space-y-3 pt-2">
                       <div className="details-modern-shimmer h-9 w-11/12 rounded-xl" />
                       <div className="details-modern-shimmer h-8 w-36 rounded-xl" />
@@ -293,13 +287,12 @@ export default function ProductDetailsPage() {
                 </Card>
 
                 <section>
-                  <div className="mb-3 flex items-center justify-between">
+                  <div className="mb-2.5">
                     <div className="details-modern-shimmer h-7 w-44 rounded-lg" />
-                    <div className="details-modern-shimmer h-10 w-36 rounded-full" />
                   </div>
-                  <div className="space-y-3">
+                  <div className="space-y-2.5">
                     {Array.from({ length: 5 }).map((_, index) => (
-                      <div key={`desktop-row-shimmer-${index}`} className="product-desktop-panel flex items-center gap-3 p-3">
+                      <div key={`desktop-row-shimmer-${index}`} className="product-desktop-panel flex items-center gap-3 p-2.5">
                         <div className="details-modern-shimmer h-12 w-12 rounded-xl" />
                         <div className="flex-1 space-y-1.5">
                           <div className="details-modern-shimmer h-5 w-4/5 rounded-lg" />
@@ -312,21 +305,30 @@ export default function ProductDetailsPage() {
                 </section>
               </section>
 
-              <aside className="space-y-5">
-                <Card className="product-desktop-panel p-4">
+              <aside className="space-y-4">
+                <Card className="product-desktop-panel p-3.5">
                   <div className="details-modern-shimmer h-7 w-28 rounded-lg" />
-                  <div className="mt-3 rounded-3xl border border-white/60 bg-white/72 p-3">
+                  <div className="mt-3 rounded-2xl border border-white/60 bg-white/72 p-2.5">
                     <div className="details-modern-shimmer h-6 w-24 rounded-lg" />
-                    <div className="details-modern-shimmer mt-2 h-7 w-20 rounded-lg" />
-                    <div className="details-modern-shimmer mt-3 h-10 w-full rounded-full" />
+                    <div className="mt-2 flex items-center justify-between gap-2">
+                      <div className="details-modern-shimmer h-7 w-20 rounded-lg" />
+                      <div className="details-modern-shimmer h-9 w-24 rounded-full" />
+                    </div>
                   </div>
                 </Card>
 
-                <Card className="product-desktop-panel p-4">
+                <Card className="product-desktop-panel p-3.5">
                   <div className="details-modern-shimmer h-6 w-44 rounded-lg" />
                   <div className="details-modern-shimmer mt-2 h-5 w-11/12 rounded-lg" />
                   <div className="details-modern-shimmer mt-1 h-5 w-10/12 rounded-lg" />
-                  <div className="details-modern-shimmer mt-4 h-10 w-full rounded-full" />
+                  <div className="details-modern-shimmer mt-3 h-10 w-full rounded-full" />
+                </Card>
+
+                <Card className="product-desktop-panel p-3.5">
+                  <div className="details-modern-shimmer h-6 w-52 rounded-lg" />
+                  <div className="details-modern-shimmer mt-2 h-5 w-11/12 rounded-lg" />
+                  <div className="details-modern-shimmer mt-1 h-5 w-9/12 rounded-lg" />
+                  <div className="details-modern-shimmer mt-3 h-10 w-full rounded-full" />
                 </Card>
               </aside>
             </div>
@@ -434,16 +436,10 @@ export default function ProductDetailsPage() {
             </div>
           </div>
 
-          <div className="product-desktop-shell hidden lg:block lg:mt-4">
-            <div className="grid gap-5 lg:grid-cols-[240px_minmax(0,1fr)_300px] xl:grid-cols-[240px_minmax(0,1fr)_340px]">
-              <aside className="product-desktop-panel product-desktop-sidebar sticky top-4 self-start p-4">
-                <div className="product-sidebar-logo mx-auto grid h-16 w-16 place-items-center rounded-2xl">
-                  <span className="grid h-10 w-10 place-items-center rounded-full bg-black text-white">
-                    <Store size={18} />
-                  </span>
-                </div>
-
-                <nav className="mt-6 space-y-1.5">
+          <div className="product-desktop-shell hidden lg:block lg:mt-2">
+            <div className="grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)_280px] xl:grid-cols-[220px_minmax(0,1fr)_320px]">
+              <aside className="product-desktop-panel product-desktop-sidebar sticky top-3 self-start p-3.5">
+                <nav className="space-y-1.5">
                   {desktopSidebarItems.map((item) => {
                     const Icon = item.icon;
                     const active = Boolean(item.active);
@@ -451,11 +447,16 @@ export default function ProductDetailsPage() {
                       <button
                         key={item.key}
                         type="button"
-                        disabled={!item.href}
+                        disabled={!item.href && item.action !== 'back'}
                         onClick={() => {
+                          if (item.action === 'back') {
+                            router.back();
+                            return;
+                          }
+
                           if (item.href) router.push(item.href);
                         }}
-                        className={`product-sidebar-link ${active ? 'product-sidebar-link-active' : ''}`}
+                        className={`product-sidebar-link ${item.key === 'back' ? 'product-sidebar-link-gradient' : active ? 'product-sidebar-link-active' : ''}`}
                       >
                         <Icon size={17} />
                         <span>{item.label}</span>
@@ -464,40 +465,41 @@ export default function ProductDetailsPage() {
                   })}
                 </nav>
 
-                <div className="mt-auto rounded-2xl border border-white/55 bg-white/70 p-3 backdrop-blur-md">
-                  <div className="flex items-center gap-3">
-                    <span className="grid h-11 w-11 place-items-center rounded-full bg-white/85 text-slate-700">
-                      <UserCircle2 size={22} />
+                <div className="mt-auto rounded-2xl border border-white/55 bg-white/70 p-2.5 backdrop-blur-md">
+                  <div className="flex items-center gap-2.5">
+                    <span className="grid h-10 w-10 place-items-center rounded-full bg-white/85 text-slate-700">
+                      <UserCircle2 size={20} />
                     </span>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-[#1F2933]">{userDisplayName}</p>
+                      <p className="truncate text-[13px] font-semibold text-[#1F2933]">{userDisplayName}</p>
                       <p className="text-xs text-[#6B7280]">Settings</p>
                     </div>
                     <button
                       type="button"
                       aria-label="Open settings"
                       onClick={() => router.push('/profile')}
-                      className="grid h-9 w-9 place-items-center rounded-full border border-white/70 bg-white/85 text-slate-600 transition-colors hover:bg-white"
+                      className="grid h-8 w-8 place-items-center rounded-full border border-white/70 bg-white/85 text-slate-600 transition-colors hover:bg-white"
                     >
-                      <Settings size={16} />
+                      <Settings size={15} />
                     </button>
                   </div>
                 </div>
               </aside>
 
-              <section className="space-y-5">
-                <div className="product-desktop-panel flex items-center gap-3 px-4 py-3">
-                  <Search size={18} className="text-[#9CA3AF]" />
-                  <input
-                    type="text"
-                    placeholder="Search products or brands"
-                    className="w-full bg-transparent text-[15px] text-[#1F2933] placeholder:text-[#9CA3AF] outline-none"
-                  />
-                </div>
-
-                <Card className="product-desktop-panel p-5">
-                  <div className="grid grid-cols-[220px_minmax(0,1fr)] gap-6">
-                    <div className="relative h-64 overflow-hidden rounded-3xl border border-white/65 bg-white/82">
+              <section className="space-y-4">
+                <Card className="product-desktop-panel relative p-4">
+                  <button
+                    aria-label="Favorite product"
+                    onClick={handleToggleFavorite}
+                    className={`absolute right-3 top-3 rounded-full border border-gray-200 bg-white p-2 text-gray-700 transition-colors hover:bg-gray-50 ${product && isFavoriteSyncing(product.productId) ? 'favorite-sync-pulse' : ''}`}
+                  >
+                    <Heart
+                      size={17}
+                      className={product && isFavorited(product.productId) ? 'fill-red-600 text-red-600' : ''}
+                    />
+                  </button>
+                  <div className="grid grid-cols-[190px_minmax(0,1fr)] gap-4">
+                    <div className="relative h-56 overflow-hidden rounded-3xl border border-white/65 bg-white/82">
                       <SafeImage
                         src={product.imageUrl}
                         alt={product.name}
@@ -507,17 +509,17 @@ export default function ProductDetailsPage() {
                         iconClassName="h-10 w-10 text-slate-400"
                       />
                     </div>
-                    <div className="space-y-3 pt-2">
-                      <h2 className="text-[28px] font-bold leading-tight text-[#1F2933]">{product.name}</h2>
-                      <p className="text-[26px] font-bold leading-none text-[#2E7D60]">{formatPKR(product.price)}</p>
-                      <p className="max-w-2xl text-[14px] leading-relaxed text-[#6B7280]">
+                    <div className="space-y-2.5 pt-1.5">
+                      <h2 className="text-[24px] font-bold leading-tight text-[#1F2933]">{product.name}</h2>
+                      <p className="text-[22px] font-bold leading-none text-[#2E7D60]">{formatPKR(product.price)}</p>
+                      <p className="max-w-2xl text-[13px] leading-relaxed text-[#6B7280]">
                         Compare this item across stores and pick the best deal before you checkout.
                       </p>
                       <div className="flex items-center gap-2">
-                        <span className="rounded-full border border-emerald-200/80 bg-emerald-100/70 px-3 py-1.5 text-[14px] font-semibold text-[#2E7D60]">
+                        <span className="rounded-full border border-emerald-200/80 bg-emerald-100/70 px-2.5 py-1 text-[13px] font-semibold text-[#2E7D60]">
                           {matches.length} stores tracked
                         </span>
-                        <span className="rounded-full border border-sky-200/80 bg-sky-100/75 px-3 py-1.5 text-[14px] font-semibold text-sky-700">
+                        <span className="rounded-full border border-sky-200/80 bg-sky-100/75 px-2.5 py-1 text-[13px] font-semibold text-sky-700">
                           {product.matchedProductsCount}+ similar matches
                         </span>
                       </div>
@@ -526,31 +528,19 @@ export default function ProductDetailsPage() {
                 </Card>
 
                 <section>
-                  <div className="mb-3 flex items-center justify-between">
-                    <h3 className="text-[18px] font-semibold text-[#1F2933]">Compare Prices</h3>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (bestStore) {
-                          window.open(googleMapsQuery(bestStore.storeId), '_blank');
-                        }
-                      }}
-                      className="inline-flex items-center gap-2 rounded-full border border-white/65 bg-white/75 px-4 py-2 text-[14px] font-medium text-[#1F2933] transition-all duration-200 hover:-translate-y-0.5 hover:bg-white"
-                    >
-                      Show on Map
-                      <MapPin size={16} className="text-[#2E7D60]" />
-                    </button>
+                  <div className="mb-2.5 flex items-center justify-between">
+                    <h3 className="text-[17px] font-semibold text-[#1F2933]">Compare Prices</h3>
                   </div>
 
-                  <div className="space-y-3">
+                  <div className="space-y-2.5">
                     {desktopComparisonRows.map((item, index) => (
                       <button
                         key={item.productId || `${item.storeId}-${index}`}
                         type="button"
                         onClick={(event) => handleOpenComparedProduct(event, item.productId)}
-                        className="product-desktop-panel product-compare-row flex w-full items-center gap-3 px-3 py-3 text-left"
+                        className="product-desktop-panel product-compare-row flex w-full items-center gap-2.5 px-2.5 py-2.5 text-left"
                       >
-                        <div className="relative h-12 w-12 overflow-hidden rounded-xl border border-white/60 bg-white/78">
+                        <div className="relative h-11 w-11 overflow-hidden rounded-xl border border-white/60 bg-white/78">
                           <SafeImage
                             src={item.imageUrl}
                             alt={item.name}
@@ -561,13 +551,13 @@ export default function ProductDetailsPage() {
                           />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-[14px] font-semibold text-[#1F2933]">{item.name}</p>
-                          <p className="text-[14px] text-[#6B7280]">{item.storeId}</p>
+                          <p className="truncate text-[13px] font-semibold text-[#1F2933]">{item.name}</p>
+                          <p className="text-[13px] text-[#6B7280]">{item.storeId}</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-[16px] font-bold text-[#1F2933]">{formatPKR(item.price)}</p>
+                          <p className="text-[15px] font-bold text-[#1F2933]">{formatPKR(item.price)}</p>
                           {cheapest && item.productId === cheapest.productId ? (
-                            <span className="inline-flex rounded-full bg-emerald-100/85 px-2 py-1 text-[11px] font-semibold text-[#2E7D60]">Best ✓</span>
+                            <span className="inline-flex rounded-full bg-emerald-100/85 px-2 py-1 text-[10px] font-semibold text-[#2E7D60]">Best ✓</span>
                           ) : null}
                         </div>
                       </button>
@@ -576,59 +566,67 @@ export default function ProductDetailsPage() {
                 </section>
               </section>
 
-              <aside className="sticky top-4 self-start space-y-5">
-                <Card className="product-desktop-panel p-4">
+              <aside className="sticky top-3 self-start space-y-4">
+                <Card className="product-desktop-panel p-3.5">
                   <div className="flex items-center gap-2">
                     <span className="grid h-7 w-7 place-items-center rounded-full bg-emerald-100/80 text-[#2E7D60]">
                       <Trophy size={14} />
                     </span>
-                    <h3 className="text-[18px] font-semibold text-[#1F2933]">Best Price</h3>
+                    <h3 className="text-[17px] font-semibold text-[#1F2933]">Best Price</h3>
                   </div>
-                  <div className="mt-3 rounded-3xl border border-white/60 bg-white/72 p-3">
-                    <p className="text-[15px] font-semibold text-[#1F2933]">{bestStore?.storeId ?? '-'}</p>
-                    <p className="text-[28px] font-bold leading-tight text-[#2E7D60]">{bestStore ? formatPKR(bestStore.price) : '-'}</p>
-                    <Button
-                      size="sm"
-                      className="mt-3 h-10 w-full rounded-full bg-[#2E7D60] text-[14px] font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_30px_-18px_rgba(46,125,96,0.9)]"
-                      onClick={() => {
-                        if (bestStore?.storeId) router.push(`/store/${encodeURIComponent(bestStore.storeId)}`);
-                      }}
-                    >
-                      See Store Details
-                    </Button>
+                  <div className="mt-3 rounded-2xl border border-white/60 bg-white/72 p-2.5">
+                    <p className="text-[14px] font-semibold text-[#1F2933]">{bestStore?.storeId ?? '-'}</p>
+                    <div className="mt-2 flex items-center justify-between gap-2">
+                      <p className="text-[24px] font-bold leading-tight text-[#2E7D60]">{bestStore ? formatPKR(bestStore.price) : '-'}</p>
+                      <Button
+                        size="sm"
+                        className="h-9 rounded-full px-3 text-[12px] font-semibold transition-all duration-200 hover:-translate-y-0.5"
+                        onClick={() => {
+                          if (bestStore) {
+                            window.open(googleMapsQuery(bestStore.storeId), '_blank');
+                          }
+                        }}
+                      >
+                        Show on Map
+                      </Button>
+                    </div>
                   </div>
                 </Card>
 
-                <Card className="product-desktop-panel p-4">
-                  <p className="text-[18px] font-semibold text-[#1F2933]">Notice an outdated price?</p>
-                  <p className="mt-1 text-[14px] leading-relaxed text-[#6B7280]">
+                <Card className="product-desktop-panel p-3.5">
+                  <p className="text-[17px] font-semibold text-[#1F2933]">Notice an outdated price?</p>
+                  <p className="mt-1 text-[13px] leading-relaxed text-[#6B7280]">
                     Help us keep comparisons accurate by reporting pricing issues.
                   </p>
                   <Button
                     variant="secondary"
                     fullWidth
-                    className="mt-4 rounded-full border border-[#D5DFDA] bg-white/72 text-[14px] font-semibold text-[#1F2933]"
+                    className="mt-3 rounded-full border border-[#D5DFDA] bg-white/72 text-[13px] font-semibold text-[#1F2933]"
                     onClick={() => router.push(`/add-price?productId=${product.productId}`)}
                   >
                     Report Price Issue
                   </Button>
                 </Card>
+
+                <Card className="product-desktop-panel p-3.5">
+                  <p className="text-[17px] font-semibold text-[#1F2933]">Share price with friends & family</p>
+                  <p className="mt-1 text-[13px] leading-relaxed text-[#6B7280]">
+                    Help others save by sharing this product and its best price.
+                  </p>
+                  <Button
+                    fullWidth
+                    className="mt-3 h-10 rounded-full text-[13px] font-semibold transition-all duration-200 hover:-translate-y-0.5"
+                    onClick={handleShare}
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      <Share2 size={15} />
+                      Share Price
+                    </span>
+                  </Button>
+                </Card>
               </aside>
             </div>
           </div>
-
-          <button
-            type="button"
-            aria-label="Open map"
-            onClick={() => {
-              if (bestStore) {
-                window.open(googleMapsQuery(bestStore.storeId), '_blank');
-              }
-            }}
-            className="product-map-fab hidden lg:grid"
-          >
-            <MapPin size={22} />
-          </button>
         </>
       )}
 
@@ -644,12 +642,12 @@ export default function ProductDetailsPage() {
       <style jsx global>{`
         .product-desktop-shell {
           position: relative;
-          border-radius: 1.75rem;
-          padding: 1rem;
+          border-radius: 1.4rem;
+          padding: 0.75rem;
           background: linear-gradient(145deg, #f5f7f6 0%, #eaf2ef 52%, #f0f6f3 100%);
           border: 1px solid rgba(255, 255, 255, 0.72);
           box-shadow:
-            0 34px 56px -44px rgba(15, 23, 42, 0.56),
+            0 26px 42px -34px rgba(15, 23, 42, 0.56),
             inset 0 1px 0 rgba(255, 255, 255, 0.78);
           overflow: hidden;
         }
@@ -667,41 +665,33 @@ export default function ProductDetailsPage() {
 
         .product-desktop-panel {
           position: relative;
-          border-radius: 1.35rem;
+          border-radius: 1.1rem;
           border: 1px solid rgba(255, 255, 255, 0.44);
           background: rgba(255, 255, 255, 0.62);
-          backdrop-filter: blur(20px) saturate(150%);
-          -webkit-backdrop-filter: blur(20px) saturate(150%);
+          backdrop-filter: blur(18px) saturate(150%);
+          -webkit-backdrop-filter: blur(18px) saturate(150%);
           box-shadow:
-            0 20px 34px -30px rgba(15, 23, 42, 0.48),
+            0 16px 28px -24px rgba(15, 23, 42, 0.48),
             inset 0 1px 0 rgba(255, 255, 255, 0.74);
         }
 
         .product-desktop-sidebar {
           display: flex;
-          min-height: calc(var(--app-dvh) - var(--desktop-top-nav-height) - 8.5rem);
+          min-height: calc(var(--app-dvh) - var(--desktop-top-nav-height) - 6.8rem);
           flex-direction: column;
           gap: 0.25rem;
-          width: 240px;
-        }
-
-        .product-sidebar-logo {
-          background: linear-gradient(145deg, rgba(255, 255, 255, 0.82), rgba(232, 244, 238, 0.68));
-          border: 1px solid rgba(255, 255, 255, 0.65);
-          box-shadow:
-            0 16px 24px -20px rgba(15, 23, 42, 0.45),
-            inset 0 1px 0 rgba(255, 255, 255, 0.8);
+          width: 220px;
         }
 
         .product-sidebar-link {
           display: flex;
           width: 100%;
           align-items: center;
-          gap: 0.75rem;
+          gap: 0.625rem;
           border-radius: 999px;
           border: 1px solid rgba(255, 255, 255, 0.56);
-          padding: 0.625rem 0.875rem;
-          font-size: 0.95rem;
+          padding: 0.55rem 0.75rem;
+          font-size: 0.88rem;
           font-weight: 500;
           color: #1f2933;
           transition:
@@ -711,10 +701,27 @@ export default function ProductDetailsPage() {
             box-shadow 200ms ease;
         }
 
-        .product-sidebar-link:hover {
+        .product-sidebar-link:not(.product-sidebar-link-gradient):hover {
           transform: translateY(-1px);
           background: rgba(255, 255, 255, 0.82);
           box-shadow: 0 14px 22px -22px rgba(15, 23, 42, 0.62);
+        }
+
+        .product-sidebar-link-gradient {
+          background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+          color: #ffffff;
+          box-shadow:
+            0 14px 24px -18px rgba(16, 185, 129, 0.96),
+            inset 0 1px 0 rgba(255, 255, 255, 0.34);
+        }
+
+        .product-sidebar-link-gradient:hover {
+          transform: translateY(-1px);
+          background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+          color: #ffffff;
+          box-shadow:
+            0 14px 24px -18px rgba(16, 185, 129, 0.96),
+            inset 0 1px 0 rgba(255, 255, 255, 0.34);
         }
 
         .product-sidebar-link-active {
@@ -745,33 +752,6 @@ export default function ProductDetailsPage() {
             0 14px 22px -20px rgba(46, 125, 96, 0.4);
         }
 
-        .product-map-fab {
-          position: fixed;
-          right: 2rem;
-          bottom: 1.85rem;
-          z-index: 35;
-          height: 3.6rem;
-          width: 3.6rem;
-          place-items: center;
-          border-radius: 999px;
-          border: 1px solid rgba(255, 255, 255, 0.74);
-          color: #ffffff;
-          background: linear-gradient(140deg, #2e7d60 0%, #1f9d74 55%, #7ed1a8 100%);
-          box-shadow:
-            0 24px 34px -20px rgba(46, 125, 96, 0.74),
-            0 0 0 6px rgba(126, 209, 168, 0.18);
-          transition:
-            transform 210ms cubic-bezier(0.2, 0.9, 0.2, 1),
-            box-shadow 220ms ease;
-        }
-
-        .product-map-fab:hover {
-          transform: translateY(-2px) scale(1.02);
-          box-shadow:
-            0 28px 38px -18px rgba(46, 125, 96, 0.8),
-            0 0 0 8px rgba(126, 209, 168, 0.22);
-        }
-
         .details-modern-shimmer {
           position: relative;
           overflow: hidden;
@@ -794,9 +774,7 @@ export default function ProductDetailsPage() {
           .product-sidebar-link,
           .product-sidebar-link:hover,
           .product-compare-row,
-          .product-compare-row:hover,
-          .product-map-fab,
-          .product-map-fab:hover {
+          .product-compare-row:hover {
             animation: none;
             transition: none;
             transform: none;

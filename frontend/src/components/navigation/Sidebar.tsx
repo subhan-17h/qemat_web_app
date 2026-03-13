@@ -3,7 +3,7 @@
 import type { CSSProperties, MouseEvent } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { Bot, CircleHelp, Heart, Home, Info, PlusCircle, Search, User } from 'lucide-react';
+import { Bot, Heart, Home, Search, Settings, User } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 import { storeIds } from '@/lib/mock-data';
@@ -18,11 +18,6 @@ const primaryNavIcons: Record<PrimaryNavKey, typeof Home> = {
   assistant: Bot,
   profile: User
 };
-
-const secondaryLinks = [
-  { href: '/help', label: 'Help & Support', icon: CircleHelp },
-  { href: '/about', label: 'About', icon: Info }
-];
 
 const desktopSidebarPrimaryNavItems = primaryNavItems.filter((item) => item.key !== 'profile');
 
@@ -61,6 +56,7 @@ export function Sidebar() {
   const isSearchListing = pathname === '/search';
   const selectedStore = resolveSelectedStore(searchParams.get('store'));
   const selectedSort = resolveSort(searchParams.get('sort'));
+  const userDisplayName = user?.name?.trim() || (user?.email ? user.email.split('@')[0] : 'Guest User');
 
   const registerPrimaryButton = useCallback(
     (key: PrimaryNavKey) => (node: HTMLAnchorElement | null) => {
@@ -260,40 +256,24 @@ export function Sidebar() {
                 })}
               </nav>
 
-              <div className="mt-4 space-y-1.5 border-t border-gray-200/80 pt-4">
-                {user ? (
-                  <Link
-                    href="/add-price"
-                    className={cn(
-                      'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors',
-                      pathname.startsWith('/add-price')
-                        ? 'bg-emerald-50 text-emerald-700'
-                        : 'text-gray-600 hover:bg-gray-100/70 hover:text-gray-900'
-                    )}
-                  >
-                    <PlusCircle size={18} />
-                    <span className="hidden xl:inline">Add Price</span>
-                  </Link>
-                ) : null}
-
-                {secondaryLinks.map((link) => {
-                  const Icon = link.icon;
-                  const active = pathname.startsWith(link.href);
-
-                  return (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      className={cn(
-                        'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors',
-                        active ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:bg-gray-100/70 hover:text-gray-900'
-                      )}
-                    >
-                      <Icon size={17} />
-                      <span className="hidden xl:inline">{link.label}</span>
-                    </Link>
-                  );
-                })}
+              <div className="mt-4 flex flex-1 flex-col border-t border-gray-200/80 pt-4">
+                <Link
+                  href="/profile"
+                  className="mt-auto rounded-2xl border border-gray-200/80 bg-white/85 p-2.5 backdrop-blur-md transition-colors hover:bg-white"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="grid h-10 w-10 place-items-center rounded-full bg-gray-100 text-slate-700">
+                      <User size={19} />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[13px] font-semibold text-[#1F2933]">{userDisplayName}</p>
+                      <p className="text-xs text-[#6B7280]">Profile</p>
+                    </div>
+                    <span className="grid h-8 w-8 place-items-center rounded-full border border-gray-200 bg-white text-slate-600">
+                      <Settings size={14} />
+                    </span>
+                  </div>
+                </Link>
               </div>
             </>
           )}

@@ -24,6 +24,12 @@ interface AppStoreValue {
 
 const AppStoreContext = createContext<AppStoreValue | null>(null);
 
+function isAuthError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const status = 'status' in error ? (error as { status?: unknown }).status : undefined;
+  return status === 401 || status === 403;
+}
+
 export function AppStoreProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [favorites, setFavorites] = useState<string[]>([]);
@@ -32,6 +38,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   const favoritesRef = useRef<string[]>([]);
   const favoriteMutationVersionRef = useRef(new Map<string, number>());
   const favoriteSyncCountRef = useRef(new Map<string, number>());
+  const pendingFavoriteTargetRef = useRef(new Map<string, boolean>());
 
   const beginFavoriteSync = useCallback((productId: string) => {
     const current = favoriteSyncCountRef.current.get(productId) ?? 0;
@@ -55,6 +62,21 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     favoritesRef.current = favorites;
   }, [favorites]);
 
+  const applyServerFavorites = useCallback((token: string, serverFavoriteIds: string[]) => {
+    const mergedSet = new Set(serverFavoriteIds);
+    pendingFavoriteTargetRef.current.forEach((shouldBeFavorited, productId) => {
+      if (shouldBeFavorited) {
+        mergedSet.add(productId);
+      } else {
+        mergedSet.delete(productId);
+      }
+    });
+
+    const mergedFavorites = Array.from(mergedSet);
+    setFavorites(mergedFavorites);
+    patchFavoritesProductsCache(token, (products) => products.filter((item) => mergedSet.has(item.productId)));
+  }, []);
+
   useEffect(() => {
     const userRaw = localStorage.getItem('qemat-user');
 
@@ -77,14 +99,10 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       try {
         const favoriteIds = await fetchFavorites(user.token);
         if (active) {
-          setFavorites(favoriteIds);
-          patchFavoritesProductsCache(user.token, (products) => products.filter((item) => favoriteIds.includes(item.productId)));
+          applyServerFavorites(user.token, favoriteIds);
         }
       } catch (error) {
         console.error('Failed to load favorites from backend.', error);
-        if (active) {
-          setFavorites([]);
-        }
       } finally {
         if (active) {
           setFavoritesLoaded(true);
@@ -96,7 +114,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     return () => {
       active = false;
     };
-  }, [user]);
+  }, [applyServerFavorites, user]);
 
   useEffect(() => {
     if (user) {
@@ -117,15 +135,14 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
 
     try {
       const favoriteIds = await fetchFavorites(nextUser.token);
-      setFavorites(favoriteIds);
-      patchFavoritesProductsCache(nextUser.token, (products) => products.filter((item) => favoriteIds.includes(item.productId)));
+      applyServerFavorites(nextUser.token, favoriteIds);
     } catch (error) {
       console.error('Failed to sync favorites after sign-in.', error);
       setFavorites([]);
     } finally {
       setFavoritesLoaded(true);
     }
-  }, []);
+  }, [applyServerFavorites]);
 
   const signInWithGoogle = useCallback(async () => {
     const idToken = await getGoogleIdTokenForBackend();
@@ -135,15 +152,14 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
 
     try {
       const favoriteIds = await fetchFavorites(nextUser.token);
-      setFavorites(favoriteIds);
-      patchFavoritesProductsCache(nextUser.token, (products) => products.filter((item) => favoriteIds.includes(item.productId)));
+      applyServerFavorites(nextUser.token, favoriteIds);
     } catch (error) {
       console.error('Failed to sync favorites after Google sign-in.', error);
       setFavorites([]);
     } finally {
       setFavoritesLoaded(true);
     }
-  }, []);
+  }, [applyServerFavorites]);
 
   const signUp = useCallback(async (name: string, email: string, password: string) => {
     const nextUser = await signUpWithBackend(name, email, password);
@@ -158,6 +174,8 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     setFavoritesLoaded(true);
     setFavoriteSyncingIds([]);
     favoriteSyncCountRef.current.clear();
+    favoriteMutationVersionRef.current.clear();
+    pendingFavoriteTargetRef.current.clear();
     clearFavoritesProductsCache();
   }, []);
 
@@ -172,6 +190,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       const shouldBeFavorited = !currentlyFavorited;
       const nextVersion = (favoriteMutationVersionRef.current.get(productId) ?? 0) + 1;
       favoriteMutationVersionRef.current.set(productId, nextVersion);
+      pendingFavoriteTargetRef.current.set(productId, shouldBeFavorited);
 
       setFavorites((current) => {
         if (shouldBeFavorited) {
@@ -192,48 +211,53 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       }
 
       beginFavoriteSync(productId);
-      void (async () => {
-        try {
-          let response = await toggleFavoriteOnBackend(token, productId);
+      try {
+        let response = await toggleFavoriteOnBackend(token, productId);
+        if (favoriteMutationVersionRef.current.get(productId) !== nextVersion) return;
+
+        if (response.added !== shouldBeFavorited) {
+          response = await toggleFavoriteOnBackend(token, productId);
           if (favoriteMutationVersionRef.current.get(productId) !== nextVersion) return;
-
-          if (response.added !== shouldBeFavorited) {
-            response = await toggleFavoriteOnBackend(token, productId);
-            if (favoriteMutationVersionRef.current.get(productId) !== nextVersion) return;
-          }
-
-          if (response.added !== shouldBeFavorited) {
-            const serverFavorites = await fetchFavorites(token);
-            if (favoriteMutationVersionRef.current.get(productId) !== nextVersion) return;
-            setFavorites(serverFavorites);
-            patchFavoritesProductsCache(token, (products) => products.filter((item) => serverFavorites.includes(item.productId)));
-          }
-        } catch (error) {
-          if (favoriteMutationVersionRef.current.get(productId) !== nextVersion) return;
-          console.error('Failed to sync favorite mutation.', error);
-
-          // Roll back optimistic change when backend update fails.
-          setFavorites((current) => {
-            if (shouldBeFavorited) {
-              return current.filter((id) => id !== productId);
-            }
-            return current.includes(productId) ? current : [...current, productId];
-          });
-
-          if (shouldBeFavorited) {
-            patchFavoritesProductsCache(token, (products) => products.filter((item) => item.productId !== productId));
-          } else if (productSnapshot) {
-            patchFavoritesProductsCache(token, (products) => {
-              const withoutCurrent = products.filter((item) => item.productId !== productId);
-              return [productSnapshot, ...withoutCurrent];
-            });
-          }
-        } finally {
-          endFavoriteSync(productId);
         }
-      })();
+
+        if (response.added !== shouldBeFavorited) {
+          const serverFavorites = await fetchFavorites(token);
+          if (favoriteMutationVersionRef.current.get(productId) !== nextVersion) return;
+          applyServerFavorites(token, serverFavorites);
+        }
+      } catch (error) {
+        if (favoriteMutationVersionRef.current.get(productId) !== nextVersion) return;
+        console.error('Failed to sync favorite mutation.', error);
+
+        // Roll back optimistic change when backend update fails.
+        setFavorites((current) => {
+          if (shouldBeFavorited) {
+            return current.filter((id) => id !== productId);
+          }
+          return current.includes(productId) ? current : [...current, productId];
+        });
+
+        if (shouldBeFavorited) {
+          patchFavoritesProductsCache(token, (products) => products.filter((item) => item.productId !== productId));
+        } else if (productSnapshot) {
+          patchFavoritesProductsCache(token, (products) => {
+            const withoutCurrent = products.filter((item) => item.productId !== productId);
+            return [productSnapshot, ...withoutCurrent];
+          });
+        }
+
+        if (isAuthError(error)) {
+          signOut();
+          throw new Error('AUTH_REQUIRED');
+        }
+      } finally {
+        if (favoriteMutationVersionRef.current.get(productId) === nextVersion) {
+          pendingFavoriteTargetRef.current.delete(productId);
+        }
+        endFavoriteSync(productId);
+      }
     },
-    [beginFavoriteSync, endFavoriteSync, user]
+    [applyServerFavorites, beginFavoriteSync, endFavoriteSync, signOut, user]
   );
 
   const removeFavorite = useCallback(
@@ -250,36 +274,42 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
 
       const nextVersion = (favoriteMutationVersionRef.current.get(productId) ?? 0) + 1;
       favoriteMutationVersionRef.current.set(productId, nextVersion);
+      pendingFavoriteTargetRef.current.set(productId, false);
       setFavorites((current) => current.filter((id) => id !== productId));
       patchFavoritesProductsCache(token, (products) => products.filter((item) => item.productId !== productId));
 
       beginFavoriteSync(productId);
-      void (async () => {
-        try {
-          let response = await toggleFavoriteOnBackend(token, productId);
-          if (favoriteMutationVersionRef.current.get(productId) !== nextVersion) return;
+      try {
+        let response = await toggleFavoriteOnBackend(token, productId);
+        if (favoriteMutationVersionRef.current.get(productId) !== nextVersion) return;
 
-          if (response.added !== false) {
-            response = await toggleFavoriteOnBackend(token, productId);
-            if (favoriteMutationVersionRef.current.get(productId) !== nextVersion) return;
-          }
-
-          if (response.added !== false) {
-            const serverFavorites = await fetchFavorites(token);
-            if (favoriteMutationVersionRef.current.get(productId) !== nextVersion) return;
-            setFavorites(serverFavorites);
-            patchFavoritesProductsCache(token, (products) => products.filter((item) => serverFavorites.includes(item.productId)));
-          }
-        } catch (error) {
+        if (response.added !== false) {
+          response = await toggleFavoriteOnBackend(token, productId);
           if (favoriteMutationVersionRef.current.get(productId) !== nextVersion) return;
-          console.error('Failed to sync favorite removal.', error);
-          setFavorites((current) => (current.includes(productId) ? current : [...current, productId]));
-        } finally {
-          endFavoriteSync(productId);
         }
-      })();
+
+        if (response.added !== false) {
+          const serverFavorites = await fetchFavorites(token);
+          if (favoriteMutationVersionRef.current.get(productId) !== nextVersion) return;
+          applyServerFavorites(token, serverFavorites);
+        }
+      } catch (error) {
+        if (favoriteMutationVersionRef.current.get(productId) !== nextVersion) return;
+        console.error('Failed to sync favorite removal.', error);
+        setFavorites((current) => (current.includes(productId) ? current : [...current, productId]));
+
+        if (isAuthError(error)) {
+          signOut();
+          throw new Error('AUTH_REQUIRED');
+        }
+      } finally {
+        if (favoriteMutationVersionRef.current.get(productId) === nextVersion) {
+          pendingFavoriteTargetRef.current.delete(productId);
+        }
+        endFavoriteSync(productId);
+      }
     },
-    [beginFavoriteSync, endFavoriteSync, user]
+    [applyServerFavorites, beginFavoriteSync, endFavoriteSync, signOut, user]
   );
 
   const isFavorited = useCallback(

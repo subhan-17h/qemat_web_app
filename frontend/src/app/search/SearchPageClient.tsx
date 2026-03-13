@@ -17,8 +17,22 @@ import { Product } from '@/types/product';
 
 const PAGE_SIZE = 40;
 const SHEET_EXIT_MS = 240;
+const SEARCH_RESTORE_TTL_MS = 15 * 60 * 1000;
+const SEARCH_STATE_STORAGE_KEY = 'qemat-search-restore-state';
+const SEARCH_STATE_ARMED_KEY = 'qemat-search-restore-armed';
 const SORT_OPTIONS = ['matchPriority', 'priceAsc', 'priceDesc', 'nameAsc'] as const;
 type SortKey = (typeof SORT_OPTIONS)[number];
+
+interface PersistedSearchState {
+  routeKey: string;
+  savedAt: number;
+  query: string;
+  selectedStore: string;
+  sortBy: SortKey;
+  products: Product[];
+  total: number;
+  scrollTop: number;
+}
 
 function getTwoRowShimmerCount(width: number) {
   if (width >= 1280) return 10; // 5 columns
@@ -113,6 +127,8 @@ export default function SearchPage() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [total, setTotal] = useState(0);
+  const restoredFromCacheRef = useRef(false);
+  const pendingScrollRestoreRef = useRef<number | null>(null);
 
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const productCardRefs = useRef(new Map<string, HTMLDivElement>());
@@ -202,6 +218,10 @@ export default function SearchPage() {
   const type = pharma ? 'pharma' : 'grocery';
   const storeFilter = selectedStore !== 'All Stores' ? selectedStore : undefined;
   const categoryFilter = category ?? undefined;
+  const routeKey = useMemo(() => {
+    const queryString = params.toString();
+    return queryString ? `${pathname}?${queryString}` : pathname;
+  }, [params, pathname]);
 
   const hasMore = products.length < total;
 
@@ -304,6 +324,30 @@ export default function SearchPage() {
     });
   }, []);
 
+  const getScrollContainer = useCallback(() => {
+    return document.querySelector('main.app-scroll') as HTMLElement | null;
+  }, []);
+
+  const persistSearchStateForBackNav = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    const scrollContainer = getScrollContainer();
+    const scrollTop = scrollContainer?.scrollTop ?? 0;
+
+    const state: PersistedSearchState = {
+      routeKey,
+      savedAt: Date.now(),
+      query,
+      selectedStore,
+      sortBy,
+      products,
+      total,
+      scrollTop
+    };
+
+    sessionStorage.setItem(SEARCH_STATE_STORAGE_KEY, JSON.stringify(state));
+    sessionStorage.setItem(SEARCH_STATE_ARMED_KEY, '1');
+  }, [getScrollContainer, products, query, routeKey, selectedStore, sortBy, total]);
+
   const loadPage = useCallback(
     async (offset: number, append: boolean) => {
       const fetcher = debouncedQuery
@@ -333,7 +377,48 @@ export default function SearchPage() {
   );
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (sessionStorage.getItem(SEARCH_STATE_ARMED_KEY) !== '1') return;
+
+    const raw = sessionStorage.getItem(SEARCH_STATE_STORAGE_KEY);
+    if (!raw) return;
+
+    try {
+      const parsed = JSON.parse(raw) as PersistedSearchState;
+      const isFresh = Date.now() - parsed.savedAt <= SEARCH_RESTORE_TTL_MS;
+
+      if (!isFresh || parsed.routeKey !== routeKey) {
+        return;
+      }
+
+      restoredFromCacheRef.current = true;
+      pendingScrollRestoreRef.current = Math.max(0, parsed.scrollTop ?? 0);
+      setQuery(parsed.query ?? '');
+      setDebouncedQuery((parsed.query ?? '').trim());
+      setSelectedStore(resolveSelectedStoreParam(parsed.selectedStore ?? null));
+      setSortBy(resolveSortParam(parsed.sortBy ?? null));
+      setProducts(Array.isArray(parsed.products) ? parsed.products : []);
+      setTotal(typeof parsed.total === 'number' ? parsed.total : 0);
+      setLoading(false);
+      setLoadingMore(false);
+    } catch (error) {
+      console.error('Failed to restore search state from storage.', error);
+    } finally {
+      sessionStorage.removeItem(SEARCH_STATE_ARMED_KEY);
+      sessionStorage.removeItem(SEARCH_STATE_STORAGE_KEY);
+    }
+  }, [routeKey]);
+
+  useEffect(() => {
     let active = true;
+
+    if (restoredFromCacheRef.current) {
+      restoredFromCacheRef.current = false;
+      return () => {
+        active = false;
+      };
+    }
+
     const run = async () => {
       setLoading(true);
       try {
@@ -457,6 +542,36 @@ export default function SearchPage() {
     };
   }, [filtersOpen, syncStoreChipPill, syncSortChipPill]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (loading) return;
+    if (pendingScrollRestoreRef.current === null) return;
+
+    const targetScrollTop = pendingScrollRestoreRef.current;
+    const applyScrollRestore = () => {
+      const scrollContainer = getScrollContainer();
+      if (scrollContainer) {
+        scrollContainer.scrollTop = targetScrollTop;
+      }
+    };
+
+    applyScrollRestore();
+    const raf = window.requestAnimationFrame(() => {
+      applyScrollRestore();
+      queueParallaxUpdate();
+      pendingScrollRestoreRef.current = null;
+    });
+    const settleTimer = window.setTimeout(() => {
+      applyScrollRestore();
+      queueParallaxUpdate();
+    }, 140);
+
+    return () => {
+      window.cancelAnimationFrame(raf);
+      window.clearTimeout(settleTimer);
+    };
+  }, [getScrollContainer, loading, products.length, queueParallaxUpdate]);
+
   const blurActiveElement = () => {
     if (typeof document !== 'undefined') {
       const active = document.activeElement;
@@ -523,6 +638,47 @@ export default function SearchPage() {
     }
   };
 
+  const openProductWithTransition = useCallback(
+    (productId: string, originEl?: HTMLElement | null) => {
+      const href = `/product/${productId}`;
+      const docWithTransition = document as Document & {
+        startViewTransition?: (callback: () => void) => { finished: Promise<void> };
+      };
+      persistSearchStateForBackNav();
+
+      if (!docWithTransition.startViewTransition) {
+        router.push(href);
+        return;
+      }
+
+      const root = document.documentElement;
+      if (originEl) {
+        const rect = originEl.getBoundingClientRect();
+        const originX = `${((rect.left + rect.width / 2) / window.innerWidth) * 100}%`;
+        const originY = `${((rect.top + rect.height / 2) / window.innerHeight) * 100}%`;
+        root.style.setProperty('--vt-origin-x', originX);
+        root.style.setProperty('--vt-origin-y', originY);
+      } else {
+        root.style.setProperty('--vt-origin-x', '50%');
+        root.style.setProperty('--vt-origin-y', '35%');
+      }
+
+      const navIntent = window.innerWidth >= 1024 ? 'desktop-deep-open' : 'browse-open';
+      root.setAttribute('data-nav-intent', navIntent);
+
+      const transition = docWithTransition.startViewTransition(() => {
+        router.push(href);
+      });
+
+      transition.finished.finally(() => {
+        root.removeAttribute('data-nav-intent');
+        root.style.removeProperty('--vt-origin-x');
+        root.style.removeProperty('--vt-origin-y');
+      });
+    },
+    [persistSearchStateForBackNav, router]
+  );
+
   const emptyDescription = useMemo(() => {
     if (category) return 'No products currently available in this category.';
     if (debouncedQuery) return 'Try a different keyword or store filter.';
@@ -564,11 +720,11 @@ export default function SearchPage() {
               tabIndex={0}
               ref={registerProductCard(product.productId)}
               data-visible="false"
-              onClick={() => router.push(`/product/${product.productId}`)}
+              onClick={(event) => openProductWithTransition(product.productId, event.currentTarget)}
               onKeyDown={(event) => {
                 if (event.key === 'Enter' || event.key === ' ') {
                   event.preventDefault();
-                  router.push(`/product/${product.productId}`);
+                  openProductWithTransition(product.productId, event.currentTarget);
                 }
               }}
               className="search-scroll-card block h-full cursor-pointer"
