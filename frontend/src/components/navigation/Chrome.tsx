@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { Suspense } from 'react';
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 
@@ -52,7 +53,11 @@ export function Chrome({ children }: { children: ReactNode }) {
     <>
       {routePresentation.showDesktopTopNav ? <DesktopTopNav /> : null}
       <div className="app-shell mx-auto flex w-full max-w-[1680px]">
-        {routePresentation.showDesktopSidebar ? <Sidebar /> : null}
+        {routePresentation.showDesktopSidebar ? (
+          <Suspense fallback={null}>
+            <Sidebar />
+          </Suspense>
+        ) : null}
         <main
           className={cn(
             'w-full min-w-0 lg:pb-0',
