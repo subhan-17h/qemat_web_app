@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { ChevronRight, ShoppingBasket, Sparkles } from 'lucide-react';
-import { type MouseEvent, useEffect, useState } from 'react';
+import { type CSSProperties, type MouseEvent, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { AppBar } from '@/components/navigation/AppBar';
@@ -143,8 +143,24 @@ export default function HomePage() {
           <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-2 lg:gap-4">
             {homeCategories.map((category) => {
               const href = category.key === 'grocery' ? '/search/categories' : '/search?pharma=true';
+              const isGroceryCategory = category.key === 'grocery';
               const categoryDescription =
-                category.key === 'grocery' ? 'Daily staples at the best rates' : 'Medicines and wellness picks';
+                isGroceryCategory ? 'Daily staples at the best rates' : 'Medicines and wellness picks';
+              const categoryCardStyle: CSSProperties = isGroceryCategory
+                ? {
+                    backgroundImage:
+                      'linear-gradient(152deg, rgba(236, 253, 245, 0.64) 0%, rgba(167, 243, 208, 0.48) 44%, rgba(16, 185, 129, 0.36) 100%), linear-gradient(142deg, rgba(220, 252, 231, 0.6) 12%, rgba(167, 243, 208, 0.44) 55%, rgba(52, 211, 153, 0.34) 100%)',
+                    borderColor: 'rgba(16, 185, 129, 0.36)',
+                    boxShadow:
+                      '0 26px 38px -28px rgba(15, 23, 42, 0.34), 0 16px 24px -22px rgba(16, 185, 129, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.8)'
+                  }
+                : {
+                    backgroundImage:
+                      'linear-gradient(152deg, rgba(239, 246, 255, 0.66) 0%, rgba(191, 219, 254, 0.5) 44%, rgba(96, 165, 250, 0.38) 100%), linear-gradient(142deg, rgba(224, 242, 254, 0.62) 10%, rgba(186, 230, 253, 0.46) 52%, rgba(59, 130, 246, 0.34) 100%)',
+                    borderColor: 'rgba(59, 130, 246, 0.34)',
+                    boxShadow:
+                      '0 26px 38px -28px rgba(15, 23, 42, 0.35), 0 16px 24px -22px rgba(59, 130, 246, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.8)'
+                  };
 
               return (
                 <Link
@@ -153,15 +169,16 @@ export default function HomePage() {
                   onClick={(event) => handlePageOpenTransition(event, href)}
                   className={cn(
                     'home-category-card group relative min-h-[132px] overflow-hidden rounded-2xl border border-white/75 p-4 transition duration-300 ease-out lg:min-h-[150px] lg:p-[18px]',
-                    category.key === 'grocery' ? 'home-category-card-grocery' : 'home-category-card-pharma'
+                    isGroceryCategory ? 'home-category-card-grocery' : 'home-category-card-pharma'
                   )}
+                  style={categoryCardStyle}
                 >
                   <div className="flex items-start justify-between">
                     <div className="home-category-icon mx-auto mb-3 grid h-12 w-12 place-items-center rounded-xl bg-white/90 shadow-sm lg:mx-0 lg:mb-3 lg:h-12 lg:w-12">
                       <Image src={category.image} alt={category.title} width={30} height={30} />
                     </div>
                     <span className="hidden rounded-full border border-white/70 bg-white/75 px-2.5 py-1 text-[11px] font-semibold text-emerald-800/90 shadow-sm backdrop-blur-sm lg:inline-flex">
-                      {category.key === 'grocery' ? 'Essentials' : 'Health'}
+                      {isGroceryCategory ? 'Essentials' : 'Health'}
                     </span>
                   </div>
                   <div className="space-y-0.5 text-center lg:text-left">
@@ -293,11 +310,14 @@ export default function HomePage() {
         }
 
         .home-category-card {
-          backdrop-filter: blur(14px) saturate(152%);
-          -webkit-backdrop-filter: blur(14px) saturate(152%);
+          --card-glow: rgba(16, 185, 129, 0.34);
+          backdrop-filter: blur(18px) saturate(175%);
+          -webkit-backdrop-filter: blur(18px) saturate(175%);
+          background-color: transparent;
           box-shadow:
-            0 20px 32px -28px rgba(15, 23, 42, 0.6),
-            inset 0 1px 0 rgba(255, 255, 255, 0.78);
+            0 24px 36px -30px rgba(15, 23, 42, 0.62),
+            0 14px 22px -22px var(--card-glow),
+            inset 0 1px 0 rgba(255, 255, 255, 0.82);
         }
 
         .home-category-card::before {
@@ -306,8 +326,8 @@ export default function HomePage() {
           inset: -1px;
           border-radius: inherit;
           background:
-            radial-gradient(88% 66% at 18% 12%, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.02) 58%),
-            radial-gradient(62% 52% at 84% 14%, rgba(255, 255, 255, 0.26) 0%, rgba(255, 255, 255, 0.04) 64%);
+            radial-gradient(88% 68% at 10% 10%, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.02) 56%),
+            radial-gradient(68% 52% at 86% 16%, var(--card-glow) 0%, rgba(255, 255, 255, 0) 64%);
           pointer-events: none;
         }
 
@@ -316,31 +336,33 @@ export default function HomePage() {
           position: absolute;
           inset: 0;
           border-radius: inherit;
-          background: linear-gradient(118deg, rgba(255, 255, 255, 0) 10%, rgba(255, 255, 255, 0.52) 45%, rgba(255, 255, 255, 0) 70%);
+          background: linear-gradient(118deg, rgba(255, 255, 255, 0) 12%, rgba(255, 255, 255, 0.46) 46%, rgba(255, 255, 255, 0) 72%);
           transform: translateX(-118%);
           transition: transform 520ms cubic-bezier(0.2, 0.9, 0.2, 1);
           pointer-events: none;
         }
 
         .home-category-card-grocery {
+          --card-glow: rgba(16, 185, 129, 0.4);
           background:
-            radial-gradient(74% 62% at 12% 10%, rgba(255, 255, 255, 0.56) 0%, rgba(255, 255, 255, 0) 62%),
-            linear-gradient(145deg, rgba(167, 243, 208, 0.92) 0%, rgba(110, 231, 183, 0.86) 46%, rgba(16, 185, 129, 0.78) 100%);
-          border-color: rgba(16, 185, 129, 0.34);
+            linear-gradient(152deg, rgba(236, 253, 245, 0.55) 0%, rgba(167, 243, 208, 0.34) 46%, rgba(16, 185, 129, 0.42) 100%),
+            linear-gradient(138deg, rgba(220, 252, 231, 0.6) 10%, rgba(167, 243, 208, 0.36) 52%, rgba(52, 211, 153, 0.35) 100%);
+          border-color: rgba(16, 185, 129, 0.44);
         }
 
         .home-category-card-pharma {
+          --card-glow: rgba(59, 130, 246, 0.42);
           background:
-            radial-gradient(74% 62% at 12% 10%, rgba(255, 255, 255, 0.56) 0%, rgba(255, 255, 255, 0) 62%),
-            linear-gradient(145deg, rgba(186, 230, 253, 0.93) 0%, rgba(147, 197, 253, 0.87) 44%, rgba(99, 102, 241, 0.79) 100%);
-          border-color: rgba(59, 130, 246, 0.32);
+            linear-gradient(152deg, rgba(239, 246, 255, 0.56) 0%, rgba(191, 219, 254, 0.36) 45%, rgba(96, 165, 250, 0.46) 100%),
+            linear-gradient(138deg, rgba(224, 242, 254, 0.62) 8%, rgba(186, 230, 253, 0.34) 52%, rgba(59, 130, 246, 0.33) 100%);
+          border-color: rgba(59, 130, 246, 0.42);
         }
 
         .home-category-card:hover {
           transform: translateY(-2px) scale(1.002);
           box-shadow:
-            0 26px 40px -26px rgba(15, 23, 42, 0.46),
-            0 18px 28px -22px rgba(16, 185, 129, 0.34),
+            0 28px 42px -24px rgba(15, 23, 42, 0.42),
+            0 22px 30px -22px var(--card-glow),
             inset 0 1px 0 rgba(255, 255, 255, 0.92);
         }
 
@@ -352,7 +374,7 @@ export default function HomePage() {
           transition:
             transform 280ms cubic-bezier(0.2, 0.9, 0.2, 1),
             box-shadow 260ms ease;
-          background: rgba(255, 255, 255, 0.9);
+          background: rgba(255, 255, 255, 0.74);
           box-shadow:
             0 16px 22px -18px rgba(15, 23, 42, 0.35),
             inset 0 1px 0 rgba(255, 255, 255, 0.95);

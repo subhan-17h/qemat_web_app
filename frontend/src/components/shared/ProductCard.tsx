@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import { BadgeCheck, Heart } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { MouseEvent } from 'react';
 
 import { Button } from '@/components/shared/Button';
 import { Card } from '@/components/shared/Card';
@@ -31,6 +33,43 @@ export function ProductCard({
   onFavoriteToggle?: () => void;
   className?: string;
 }) {
+  const router = useRouter();
+
+  const openProductWithTransition = (event: MouseEvent<HTMLAnchorElement>) => {
+    const isModifiedClick = event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0;
+    if (isModifiedClick) return;
+
+    const href = `/product/${product.productId}`;
+    const docWithTransition = document as Document & {
+      startViewTransition?: (callback: () => void) => { finished: Promise<void> };
+    };
+
+    if (!docWithTransition.startViewTransition) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const root = document.documentElement;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const originX = `${((rect.left + rect.width / 2) / window.innerWidth) * 100}%`;
+    const originY = `${((rect.top + rect.height / 2) / window.innerHeight) * 100}%`;
+    const navIntent = window.innerWidth >= 1024 ? 'desktop-deep-open' : 'browse-open';
+
+    root.setAttribute('data-nav-intent', navIntent);
+    root.style.setProperty('--vt-origin-x', originX);
+    root.style.setProperty('--vt-origin-y', originY);
+
+    const transition = docWithTransition.startViewTransition(() => {
+      router.push(href);
+    });
+
+    transition.finished.finally(() => {
+      root.removeAttribute('data-nav-intent');
+      root.style.removeProperty('--vt-origin-x');
+      root.style.removeProperty('--vt-origin-y');
+    });
+  };
+
   if (searchCompact) {
     return (
       <Card
@@ -119,7 +158,7 @@ export function ProductCard({
         <p className={cn('font-bold text-brand-700', compact ? 'text-base' : 'text-lg')}>{formatPKR(product.price)}</p>
         <p className={cn('text-gray-500', compact ? 'text-[11px]' : 'text-xs')}>{product.matchedProductsCount}+ similar products</p>
         {homePopular ? (
-          <Link href={`/product/${product.productId}`} className="mt-auto block">
+          <Link href={`/product/${product.productId}`} className="mt-auto block" onClick={openProductWithTransition}>
             <Button size="sm" className={cn('w-full', compact ? 'h-9 text-sm' : '')}>
               Compare
             </Button>
