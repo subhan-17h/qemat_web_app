@@ -1,0 +1,17 @@
+[Unit]
+Description=Ingest the latest Qemat grocery bundle
+After=network-online.target qemat-backend.service
+Wants=network-online.target
+OnFailure=qemat-email-alert@%n.service
+
+[Service]
+Type=oneshot
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/opt/qemat/qemat_web_app/backend
+Environment=PYTHONUNBUFFERED=1
+StateDirectory=qemat-alerts
+ExecStart=/opt/qemat/qemat_web_app/backend/venv/bin/python -m app.jobs.ingest --type grocery
+ExecStartPost=/opt/qemat/qemat_web_app/backend/venv/bin/python scripts/send_failure_email.py success qemat-bundle-ingest.service
+TimeoutStartSec=30min
+TimeoutStopSec=2min

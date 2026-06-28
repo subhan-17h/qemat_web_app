@@ -1,0 +1,11 @@
+[Unit]
+Description=Check for a new Qemat grocery bundle every 15 minutes
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=15min
+AccuracySec=1min
+Unit=qemat-bundle-ingest.service
+
+[Install]
+WantedBy=timers.target

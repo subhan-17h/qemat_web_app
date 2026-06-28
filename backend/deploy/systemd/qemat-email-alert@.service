@@ -1,0 +1,12 @@
+[Unit]
+Description=Send Qemat failure email for %i
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+Group=ubuntu
+EnvironmentFile=/etc/qemat/alerts.env
+StateDirectory=qemat-alerts
+ExecStart=/opt/qemat/qemat_web_app/backend/venv/bin/python /opt/qemat/qemat_web_app/backend/scripts/send_failure_email.py failure %i

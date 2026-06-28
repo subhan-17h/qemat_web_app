@@ -9,10 +9,20 @@ from app.services import product_service, product_db_service
 
 async def ingest_bundle(product_type: str) -> None:
     metadata = await product_service.fetch_bundle_metadata(product_type)
-    version = metadata.get("version", "")
-    file_url = metadata.get("fileUrl", "")
+    version = str(metadata.get("version", "")).strip()
+    file_url = str(metadata.get("fileUrl", "")).strip()
     last_updated = metadata.get("lastUpdated") or metadata.get("exportDate")
-    product_count = int(metadata.get("productCount", 0))
+    try:
+        product_count = int(metadata.get("productCount", 0))
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"Invalid {product_type} metadata productCount") from exc
+
+    if not version:
+        raise ValueError(f"Missing version in {product_type} bundle metadata")
+    if not file_url:
+        raise ValueError(f"Missing fileUrl in {product_type} bundle metadata")
+    if product_count <= 0:
+        raise ValueError(f"Invalid {product_type} metadata productCount: {product_count}")
 
     existing = await product_db_service.get_bundle_version(product_type)
     if existing and existing.get("version") == version:
@@ -21,6 +31,12 @@ async def ingest_bundle(product_type: str) -> None:
 
     bundle = await product_service.fetch_bundle(product_type)
     products = product_service.parse_bundle_products(bundle, is_pharma=(product_type == "pharma"))
+    if not products:
+        raise ValueError(f"Refusing to ingest empty {product_type} bundle")
+    if len(products) != product_count:
+        raise ValueError(
+            f"{product_type} bundle count mismatch: metadata={product_count}, parsed={len(products)}"
+        )
 
     await product_db_service.upsert_products(products)
     await product_db_service.set_bundle_version(
@@ -34,13 +50,15 @@ async def ingest_bundle(product_type: str) -> None:
 
 
 async def run_ingest(product_type: Optional[str] = None) -> None:
-    await init_db()
-    if product_type:
-        await ingest_bundle(product_type)
-    else:
-        await ingest_bundle("grocery")
-        await ingest_bundle("pharma")
-    await close_pool()
+    try:
+        await init_db()
+        if product_type:
+            await ingest_bundle(product_type)
+        else:
+            await ingest_bundle("grocery")
+            await ingest_bundle("pharma")
+    finally:
+        await close_pool()
 
 
 if __name__ == "__main__":
