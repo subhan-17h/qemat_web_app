@@ -9,6 +9,7 @@ import { BottomSheet } from '@/components/shared/BottomSheet';
 import { Button } from '@/components/shared/Button';
 import { Card } from '@/components/shared/Card';
 import { EmptyState } from '@/components/shared/EmptyState';
+import { PriceHistoryChart } from '@/components/shared/PriceHistoryChart';
 import { SafeImage } from '@/components/shared/SafeImage';
 import { formatPKR, googleMapsQuery } from '@/lib/formatters';
 import { fetchProductWithMatches } from '@/lib/api';
@@ -226,6 +227,13 @@ export default function ProductDetailsPage() {
             </Card>
 
             <section>
+              <div className="details-modern-shimmer mb-3 h-7 w-32 rounded-lg" />
+              <Card className="backdrop-blur-[18px] saturate-[150%] border-white/40">
+                <div className="details-modern-shimmer h-48 w-full rounded-lg" />
+              </Card>
+            </section>
+
+            <section>
               <div className="details-modern-shimmer mb-3 h-7 w-36 rounded-lg" />
               <div className="space-y-2.5">
                 {Array.from({ length: 3 }).map((_, index) => (
@@ -285,6 +293,13 @@ export default function ProductDetailsPage() {
                     </div>
                   </div>
                 </Card>
+
+                <section>
+                  <div className="details-modern-shimmer mb-3 h-7 w-32 rounded-lg" />
+                  <Card className="backdrop-blur-[18px] saturate-[150%] border-white/40">
+                    <div className="details-modern-shimmer h-48 w-full rounded-lg" />
+                  </Card>
+                </section>
 
                 <section>
                   <div className="mb-2.5">
@@ -390,6 +405,8 @@ export default function ProductDetailsPage() {
                 </div>
               </Card>
             ) : null}
+
+            <PriceHistoryChart data={product.priceHistory} />
 
             {comparisonRows.length ? (
               <section>
@@ -526,6 +543,8 @@ export default function ProductDetailsPage() {
                     </div>
                   </div>
                 </Card>
+
+                <PriceHistoryChart data={product.priceHistory} />
 
                 <section>
                   <div className="mb-2.5 flex items-center justify-between">

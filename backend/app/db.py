@@ -72,6 +72,13 @@ async def init_db() -> None:
             """
         )
 
+        await conn.execute(
+            """
+            ALTER TABLE products
+            ADD COLUMN IF NOT EXISTS price_history JSONB DEFAULT '[]'::jsonb;
+            """
+        )
+
         await conn.execute("CREATE INDEX IF NOT EXISTS idx_products_is_pharma_store ON products (is_pharma, store_id);")
         await conn.execute("CREATE INDEX IF NOT EXISTS idx_products_is_pharma_category ON products (is_pharma, category);")
         await conn.execute("CREATE INDEX IF NOT EXISTS idx_products_is_pharma_name ON products (is_pharma, name);")

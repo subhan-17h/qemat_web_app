@@ -8,6 +8,10 @@ from app.models.product import Product
 
 
 def _row_to_product(row) -> Product:
+    ph = row["price_history"] or []
+    if isinstance(ph, str):
+        import json
+        ph = json.loads(ph)
     return Product(
         id=row["id"],
         product_id=row["product_id"],
@@ -21,6 +25,7 @@ def _row_to_product(row) -> Product:
         is_verified=row["is_verified"],
         matched_product_ids=row["matched_product_ids"] or [],
         matched_products_count=row["matched_products_count"],
+        price_history=ph,
         created_at=row["created_at"],
         last_updated=row["last_updated"],
         is_pharma=row["is_pharma"],
@@ -81,13 +86,13 @@ async def upsert_products(products: Sequence[Product]) -> None:
         INSERT INTO products (
             id, product_id, name, price, store_id, category,
             category_variations, image_url, original_url, is_verified,
-            matched_product_ids, matched_products_count, is_pharma,
+            matched_product_ids, matched_products_count, price_history, is_pharma,
             created_at, last_updated
         ) VALUES (
             $1, $2, $3, $4, $5, $6,
             $7, $8, $9, $10,
-            $11, $12, $13,
-            $14, $15
+            $11, $12, $13, $14,
+            $15, $16
         )
         ON CONFLICT (product_id) DO UPDATE SET
             name = EXCLUDED.name,
@@ -100,6 +105,7 @@ async def upsert_products(products: Sequence[Product]) -> None:
             is_verified = EXCLUDED.is_verified,
             matched_product_ids = EXCLUDED.matched_product_ids,
             matched_products_count = EXCLUDED.matched_products_count,
+            price_history = EXCLUDED.price_history,
             is_pharma = EXCLUDED.is_pharma,
             created_at = EXCLUDED.created_at,
             last_updated = EXCLUDED.last_updated;
@@ -118,6 +124,7 @@ async def upsert_products(products: Sequence[Product]) -> None:
             p.is_verified,
             p.matched_product_ids,
             p.matched_products_count,
+            p.price_history,
             p.is_pharma,
             p.created_at,
             p.last_updated,

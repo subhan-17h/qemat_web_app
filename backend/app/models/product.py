@@ -18,6 +18,7 @@ class ProductBase(BaseModel):
     is_verified: bool = Field(False, alias="isVerified")
     matched_product_ids: List[str] = Field(default_factory=list, alias="matchedProductIds")
     matched_products_count: int = Field(0, alias="matchedProductsCount")
+    price_history: List[dict] = Field(default_factory=list, alias="priceHistory")
 
     model_config = {"populate_by_name": True}
 
@@ -113,6 +114,13 @@ def parse_product_from_raw(data: dict, doc_id: str = "") -> Product:
     elif not isinstance(variations, list):
         variations = []
 
+    # Parse price history
+    raw_price_history = data.get("price_history") or data.get("priceHistory") or []
+    if isinstance(raw_price_history, list):
+        price_history = raw_price_history
+    else:
+        price_history = []
+
     return Product(
         id=_safe_str(doc_id or data.get("document_id")),
         product_id=_safe_str(data.get("product_id")),
@@ -126,6 +134,7 @@ def parse_product_from_raw(data: dict, doc_id: str = "") -> Product:
         is_verified=data.get("is_verified", False),
         matched_product_ids=matched_ids,
         matched_products_count=int(data.get("matched_products_count", 0)),
+        price_history=price_history,
         created_at=created_at,
         last_updated=last_updated,
         is_pharma=False,

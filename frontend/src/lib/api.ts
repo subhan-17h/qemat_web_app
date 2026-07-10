@@ -1,4 +1,4 @@
-import { Product, StoreId } from '@/types/product';
+import { Product, PriceHistoryEntry, StoreId } from '@/types/product';
 import { User } from '@/types/user';
 
 type ProductType = 'grocery' | 'pharma';
@@ -89,6 +89,24 @@ function getStringArray(value: unknown): string[] {
   return value.filter((entry): entry is string => typeof entry === 'string');
 }
 
+function getPriceHistory(value: unknown): PriceHistoryEntry[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((entry): entry is PriceHistoryEntry => {
+    if (typeof entry !== 'object' || entry === null) return false;
+    const e = entry as unknown as Record<string, unknown>;
+    const price = typeof e.price === 'number' ? e.price : Number(e.price);
+    const date = typeof e.date === 'string' ? e.date : typeof e.timestamp === 'string' ? e.timestamp : '';
+    return Number.isFinite(price) && date.length > 0;
+  }).map((entry) => {
+    const e = entry as unknown as Record<string, unknown>;
+    return {
+      price: typeof e.price === 'number' ? e.price : Number(e.price),
+      date: (typeof e.date === 'string' ? e.date : typeof e.timestamp === 'string' ? e.timestamp : '') as string,
+      isCurrent: Boolean(e.isCurrent ?? e.is_current ?? false),
+    };
+  });
+}
+
 function normalizeProduct(raw: Record<string, unknown>, defaultIsPharma = false): Product {
   const productId = getString(raw.productId ?? raw.product_id);
   const matchedProductIds = getStringArray(raw.matchedProductIds ?? raw.matched_product_ids ?? raw.matched_products);
@@ -103,6 +121,7 @@ function normalizeProduct(raw: Record<string, unknown>, defaultIsPharma = false)
     imageUrl: getString(raw.imageUrl ?? raw.image_url),
     matchedProductIds,
     matchedProductsCount,
+    priceHistory: getPriceHistory(raw.priceHistory ?? raw.price_history),
     isPharma: getBoolean(raw.isPharma ?? raw.is_pharma, defaultIsPharma)
   };
 }

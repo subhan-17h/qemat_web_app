@@ -105,6 +105,7 @@ export const products: Product[] = [
     imageUrl: '/assets/images/milk.png',
     matchedProductIds: ['milk-olpers-metro', 'milk-olpers-carrefour'],
     matchedProductsCount: 2,
+    priceHistory: [],
     isPharma: false
   },
   {
@@ -116,6 +117,7 @@ export const products: Product[] = [
     imageUrl: '/assets/images/milk.png',
     matchedProductIds: ['milk-olpers-imtiaz', 'milk-olpers-carrefour'],
     matchedProductsCount: 2,
+    priceHistory: [],
     isPharma: false
   },
   {
@@ -127,6 +129,7 @@ export const products: Product[] = [
     imageUrl: '/assets/images/milk.png',
     matchedProductIds: ['milk-olpers-imtiaz', 'milk-olpers-metro'],
     matchedProductsCount: 2,
+    priceHistory: [],
     isPharma: false
   },
   {
@@ -138,6 +141,7 @@ export const products: Product[] = [
     imageUrl: '/assets/images/Sugar.jpg',
     matchedProductIds: ['sugar-1kg-jalalsons', 'sugar-1kg-imtiaz'],
     matchedProductsCount: 2,
+    priceHistory: [],
     isPharma: false
   },
   {
@@ -149,6 +153,7 @@ export const products: Product[] = [
     imageUrl: '/assets/images/Sugar.jpg',
     matchedProductIds: ['sugar-1kg-alfatah', 'sugar-1kg-imtiaz'],
     matchedProductsCount: 2,
+    priceHistory: [],
     isPharma: false
   },
   {
@@ -160,6 +165,7 @@ export const products: Product[] = [
     imageUrl: '/assets/images/Sugar.jpg',
     matchedProductIds: ['sugar-1kg-alfatah', 'sugar-1kg-jalalsons'],
     matchedProductsCount: 2,
+    priceHistory: [],
     isPharma: false
   },
   {
@@ -171,6 +177,7 @@ export const products: Product[] = [
     imageUrl: '/assets/images/Rice.jpg',
     matchedProductIds: ['basmati-rice-rainbow', 'basmati-rice-carrefour'],
     matchedProductsCount: 2,
+    priceHistory: [],
     isPharma: false
   },
   {
@@ -182,6 +189,7 @@ export const products: Product[] = [
     imageUrl: '/assets/images/Rice.jpg',
     matchedProductIds: ['basmati-rice-metro', 'basmati-rice-carrefour'],
     matchedProductsCount: 2,
+    priceHistory: [],
     isPharma: false
   },
   {
@@ -193,6 +201,7 @@ export const products: Product[] = [
     imageUrl: '/assets/images/Rice.jpg',
     matchedProductIds: ['basmati-rice-metro', 'basmati-rice-rainbow'],
     matchedProductsCount: 2,
+    priceHistory: [],
     isPharma: false
   },
   {
@@ -204,6 +213,7 @@ export const products: Product[] = [
     imageUrl: '/assets/images/Tea.jpg',
     matchedProductIds: ['tea-lipton-imtiaz', 'tea-lipton-jalalsons'],
     matchedProductsCount: 2,
+    priceHistory: [],
     isPharma: false
   },
   {
@@ -215,6 +225,7 @@ export const products: Product[] = [
     imageUrl: '/assets/images/Tea.jpg',
     matchedProductIds: ['tea-lipton-alfatah', 'tea-lipton-jalalsons'],
     matchedProductsCount: 2,
+    priceHistory: [],
     isPharma: false
   },
   {
@@ -226,6 +237,7 @@ export const products: Product[] = [
     imageUrl: '/assets/images/Tea.jpg',
     matchedProductIds: ['tea-lipton-alfatah', 'tea-lipton-imtiaz'],
     matchedProductsCount: 2,
+    priceHistory: [],
     isPharma: false
   },
   {
@@ -237,6 +249,7 @@ export const products: Product[] = [
     imageUrl: '/assets/icons/pharma.png',
     matchedProductIds: ['panadol-imtiaz', 'panadol-metro'],
     matchedProductsCount: 2,
+    priceHistory: [],
     isPharma: true
   },
   {
@@ -248,6 +261,7 @@ export const products: Product[] = [
     imageUrl: '/assets/icons/pharma.png',
     matchedProductIds: ['panadol-carrefour', 'panadol-metro'],
     matchedProductsCount: 2,
+    priceHistory: [],
     isPharma: true
   },
   {
@@ -259,6 +273,7 @@ export const products: Product[] = [
     imageUrl: '/assets/icons/pharma.png',
     matchedProductIds: ['panadol-carrefour', 'panadol-imtiaz'],
     matchedProductsCount: 2,
+    priceHistory: [],
     isPharma: true
   },
   {
@@ -270,6 +285,7 @@ export const products: Product[] = [
     imageUrl: '/assets/images/Cooking Oil.jpg',
     matchedProductIds: ['oil-dalda-alfatah', 'oil-dalda-carrefour'],
     matchedProductsCount: 2,
+    priceHistory: [],
     isPharma: false
   },
   {
@@ -281,6 +297,7 @@ export const products: Product[] = [
     imageUrl: '/assets/images/Cooking Oil.jpg',
     matchedProductIds: ['oil-dalda-rainbow', 'oil-dalda-carrefour'],
     matchedProductsCount: 2,
+    priceHistory: [],
     isPharma: false
   },
   {
@@ -292,6 +309,7 @@ export const products: Product[] = [
     imageUrl: '/assets/images/Cooking Oil.jpg',
     matchedProductIds: ['oil-dalda-rainbow', 'oil-dalda-alfatah'],
     matchedProductsCount: 2,
+    priceHistory: [],
     isPharma: false
   }
 ];

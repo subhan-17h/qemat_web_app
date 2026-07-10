@@ -1,5 +1,11 @@
 export type StoreId = string;
 
+export interface PriceHistoryEntry {
+  price: number;
+  date: string;
+  isCurrent: boolean;
+}
+
 export interface Product {
   productId: string;
   name: string;
@@ -9,6 +15,7 @@ export interface Product {
   imageUrl: string;
   matchedProductIds: string[];
   matchedProductsCount: number;
+  priceHistory: PriceHistoryEntry[];
   isPharma: boolean;
 }
 
