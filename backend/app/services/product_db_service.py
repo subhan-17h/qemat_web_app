@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from typing import Optional, Sequence
 from datetime import datetime
 
@@ -10,7 +11,6 @@ from app.models.product import Product
 def _row_to_product(row) -> Product:
     ph = row["price_history"] or []
     if isinstance(ph, str):
-        import json
         ph = json.loads(ph)
     return Product(
         id=row["id"],
@@ -124,7 +124,7 @@ async def upsert_products(products: Sequence[Product]) -> None:
             p.is_verified,
             p.matched_product_ids,
             p.matched_products_count,
-            p.price_history,
+            json.dumps(p.price_history),
             p.is_pharma,
             p.created_at,
             p.last_updated,
