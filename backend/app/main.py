@@ -14,7 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import get_settings
 from app.services.firebase_service import init_firebase
 from app.db import init_db, close_pool
-from app.routers import products, auth, favorites, analytics
+from app.routers import products, auth, favorites, analytics, qr_analytics
 
 
 @asynccontextmanager
@@ -62,6 +62,7 @@ app.include_router(products.router)
 app.include_router(auth.router)
 app.include_router(favorites.router)
 app.include_router(analytics.router)
+app.include_router(qr_analytics.router)
 
 
 @app.get("/", tags=["Health"])

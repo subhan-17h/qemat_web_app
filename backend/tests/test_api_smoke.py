@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import date
 from typing import Dict, Optional, Tuple
 
 import pytest
@@ -12,6 +13,7 @@ import app.routers.favorites as favorites_router
 import app.services.analytics_service as analytics_service
 import app.services.auth_service as auth_service
 import app.services.product_service as product_service
+import app.services.qr_analytics_service as qr_service
 from app.models.product import Product
 from app.models.user import UserResponse
 
@@ -394,3 +396,155 @@ def test_analytics_purchase_guest_mode(client: TestClient):
     purchase = client.post("/api/analytics/purchase", json={"productId": "ALFATAH_milk_1kg"})
     assert purchase.status_code == 200
     assert purchase.json()["success"] is True
+
+
+def test_android_redirect_records_scan_and_sets_cookie(client: TestClient, monkeypatch):
+    calls = []
+
+    async def fake_record_scan(**kwargs):
+        calls.append(kwargs)
+
+    monkeypatch.setattr(qr_service, "record_scan", fake_record_scan)
+    response = client.get("/a", follow_redirects=False, headers={"user-agent": "Mozilla/5.0"})
+
+    assert response.status_code == 302
+    assert response.headers["location"] == qr_service.ANDROID_DESTINATION
+    assert response.headers["cache-control"] == "no-store, max-age=0"
+    assert "Secure" in response.headers["set-cookie"]
+    assert "HttpOnly" in response.headers["set-cookie"]
+    assert "SameSite=lax" in response.headers["set-cookie"]
+    assert len(calls) == 1
+    assert calls[0]["platform"] == "android"
+    assert calls[0]["is_bot"] is False
+
+
+def test_ios_redirect_reuses_cookie_and_marks_bots(client: TestClient, monkeypatch):
+    calls = []
+
+    async def fake_record_scan(**kwargs):
+        calls.append(kwargs)
+
+    monkeypatch.setattr(qr_service, "record_scan", fake_record_scan)
+    response = client.get(
+        "/i",
+        follow_redirects=False,
+        headers={
+            "user-agent": "Slackbot-LinkExpanding 1.0",
+            "cookie": f"{qr_service.VISITOR_COOKIE_NAME}=repeat-visitor",
+        },
+    )
+
+    assert response.status_code == 302
+    assert response.headers["location"] == qr_service.IOS_DESTINATION
+    assert "set-cookie" not in response.headers
+    assert calls == [{"platform": "ios", "visitor_id": "repeat-visitor", "is_bot": True}]
+
+
+def test_redirect_survives_storage_failure(client: TestClient, monkeypatch):
+    async def failing_record_scan(**kwargs):
+        raise TimeoutError("database unavailable")
+
+    monkeypatch.setattr(qr_service, "record_scan", failing_record_scan)
+    response = client.get("/a", follow_redirects=False)
+
+    assert response.status_code == 302
+    assert response.headers["location"] == qr_service.ANDROID_DESTINATION
+
+
+def test_head_and_unknown_paths_do_not_record(client: TestClient, monkeypatch):
+    calls = []
+
+    async def fake_record_scan(**kwargs):
+        calls.append(kwargs)
+
+    monkeypatch.setattr(qr_service, "record_scan", fake_record_scan)
+    assert client.head("/a", follow_redirects=False).status_code == 405
+    assert client.get("/not-a-qr-route", follow_redirects=False).status_code == 404
+    assert calls == []
+
+
+def test_qr_analytics_requires_authentication(client: TestClient):
+    app = main_mod.app
+    current_user_override = app.dependency_overrides.pop(deps.get_current_user)
+    try:
+        response = client.get("/api/admin/qr-analytics")
+    finally:
+        app.dependency_overrides[deps.get_current_user] = current_user_override
+
+    assert response.status_code == 401
+
+
+def test_qr_analytics_rejects_non_allowlisted_user(client: TestClient):
+    response = client.get("/api/admin/qr-analytics")
+    assert response.status_code == 403
+
+
+def test_qr_analytics_returns_summary_for_allowlisted_admin(client: TestClient, monkeypatch):
+    async def fake_get_analytics(from_date: date, to_date: date):
+        return {
+            "period": {"from_date": from_date, "to_date": to_date, "timezone": "Asia/Karachi"},
+            "totals": {
+                "total_visits": 4,
+                "estimated_unique_visitors": 3,
+                "android_visits": 3,
+                "ios_visits": 1,
+                "excluded_automated_visits": 2,
+            },
+            "all_time_total_visits": 11,
+            "daily": [
+                {
+                    "date": from_date,
+                    "total_visits": 4,
+                    "estimated_unique_visitors": 3,
+                    "android_visits": 3,
+                    "ios_visits": 1,
+                }
+            ],
+        }
+
+    monkeypatch.setattr(qr_service, "get_analytics", fake_get_analytics)
+    app = main_mod.app
+    app.dependency_overrides[deps.get_qr_analytics_admin] = lambda: {
+        "uid": "admin-1",
+        "email": "admin@example.com",
+    }
+    try:
+        response = client.get(
+            "/api/admin/qr-analytics",
+            params={"from": "2026-07-01", "to": "2026-07-01"},
+        )
+    finally:
+        app.dependency_overrides.pop(deps.get_qr_analytics_admin, None)
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["period"] == {"from": "2026-07-01", "to": "2026-07-01", "timezone": "Asia/Karachi"}
+    assert payload["totals"]["totalVisits"] == 4
+    assert payload["totals"]["estimatedUniqueVisitors"] == 3
+    assert payload["allTimeTotalVisits"] == 11
+
+
+def test_qr_analytics_validates_date_range(client: TestClient):
+    app = main_mod.app
+    app.dependency_overrides[deps.get_qr_analytics_admin] = lambda: {"email": "admin@example.com"}
+    try:
+        reversed_range = client.get(
+            "/api/admin/qr-analytics",
+            params={"from": "2026-07-02", "to": "2026-07-01"},
+        )
+        oversized_range = client.get(
+            "/api/admin/qr-analytics",
+            params={"from": "2025-01-01", "to": "2026-07-01"},
+        )
+    finally:
+        app.dependency_overrides.pop(deps.get_qr_analytics_admin, None)
+
+    assert reversed_range.status_code == 422
+    assert oversized_range.status_code == 422
+
+
+def test_bot_detection_and_visitor_hash_are_stable():
+    assert qr_service.is_automated_user_agent("Mozilla/5.0") is False
+    assert qr_service.is_automated_user_agent("facebookexternalhit/1.1") is True
+    assert qr_service.hash_visitor_id("visitor-a") == qr_service.hash_visitor_id("visitor-a")
+    assert qr_service.hash_visitor_id("visitor-a") != qr_service.hash_visitor_id("visitor-b")

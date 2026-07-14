@@ -82,3 +82,25 @@ async def init_db() -> None:
         await conn.execute("CREATE INDEX IF NOT EXISTS idx_products_is_pharma_store ON products (is_pharma, store_id);")
         await conn.execute("CREATE INDEX IF NOT EXISTS idx_products_is_pharma_category ON products (is_pharma, category);")
         await conn.execute("CREATE INDEX IF NOT EXISTS idx_products_is_pharma_name ON products (is_pharma, name);")
+
+        await conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS qr_scan_events (
+                id BIGSERIAL PRIMARY KEY,
+                occurred_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                platform TEXT NOT NULL CHECK (platform IN ('android', 'ios')),
+                campaign TEXT NOT NULL DEFAULT 'poster_v1',
+                visitor_hash TEXT NOT NULL,
+                is_bot BOOLEAN NOT NULL DEFAULT FALSE
+            );
+            """
+        )
+        await conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_qr_scan_events_occurred_at ON qr_scan_events (occurred_at);"
+        )
+        await conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_qr_scan_events_platform ON qr_scan_events (platform);"
+        )
+        await conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_qr_scan_events_visitor_hash ON qr_scan_events (visitor_hash);"
+        )

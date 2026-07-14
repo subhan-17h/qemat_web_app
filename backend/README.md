@@ -21,6 +21,7 @@ cp .env.example .env
 # Edit .env with your settings
 # Set FIREBASE_WEB_API_KEY if you want server-side email/password login
 # Set DATABASE_URL for PostgreSQL (e.g. postgresql://user:pass@localhost:5432/qemat)
+# Set QR_ANALYTICS_ADMIN_EMAILS and QR_ANALYTICS_SECRET for the QR dashboard
 
 # 5. Run the server
 source venv/bin/activate
@@ -65,3 +66,17 @@ Once running, visit:
 | POST | `/api/favorites/{id}` | Yes | Toggle favorite |
 | POST | `/api/analytics/purchase` | Optional | Track purchase |
 | POST | `/api/analytics/report` | Optional | Report price issue |
+| GET | `/a` | No | Record Android poster visit and redirect to Google Play |
+| GET | `/i` | No | Record iOS poster visit and redirect to qemat.pk |
+| GET | `/api/admin/qr-analytics?from=&to=` | Admin | QR visit summary and daily series |
+
+## Poster QR Analytics
+
+The public poster URLs are `https://go.qemat.pk/a` and `https://go.qemat.pk/i`.
+They set a secure first-party visitor cookie, store only its HMAC hash, and redirect with a non-cacheable
+`302` response. The admin dashboard is available at `https://qemat.pk/admin/qr-analytics` to Firebase users
+whose email is listed in `QR_ANALYTICS_ADMIN_EMAILS`.
+
+The PostgreSQL table and indexes are created by `init_db()` during application startup. Configure the
+`go.qemat.pk` Nginx virtual host using `deploy/nginx/go.qemat.pk.conf`; deployment steps are documented in
+`deploy/README.md`.

@@ -46,13 +46,38 @@ interface ProductWithMatchesResponse {
 
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000').replace(/\/+$/, '');
 
-class ApiError extends Error {
+export class ApiError extends Error {
   status: number;
 
   constructor(message: string, status: number) {
     super(message);
     this.status = status;
   }
+}
+
+export interface QrAnalyticsDailyPoint {
+  date: string;
+  totalVisits: number;
+  estimatedUniqueVisitors: number;
+  androidVisits: number;
+  iosVisits: number;
+}
+
+export interface QrAnalyticsResponse {
+  period: {
+    from: string;
+    to: string;
+    timezone: string;
+  };
+  totals: {
+    totalVisits: number;
+    estimatedUniqueVisitors: number;
+    androidVisits: number;
+    iosVisits: number;
+    excludedAutomatedVisits: number;
+  };
+  allTimeTotalVisits: number;
+  daily: QrAnalyticsDailyPoint[];
 }
 
 function getString(value: unknown, fallback = ''): string {
@@ -295,6 +320,19 @@ export async function fetchFavoriteProducts(token: string): Promise<Product[]> {
 export async function toggleFavoriteOnBackend(token: string, productId: string): Promise<{ added: boolean; productId: string }> {
   return request<{ added: boolean; productId: string }>(`/api/favorites/${encodeURIComponent(productId)}`, {
     method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+}
+
+export async function fetchQrAnalytics(
+  token: string,
+  from: string,
+  to: string
+): Promise<QrAnalyticsResponse> {
+  const query = new URLSearchParams({ from, to });
+  return request<QrAnalyticsResponse>(`/api/admin/qr-analytics?${query.toString()}`, {
     headers: {
       Authorization: `Bearer ${token}`
     }

@@ -37,3 +37,4 @@ npm run build
 - Shared reusable UI components
 - Backend API integration for products/auth/favorites (with mock-data fallback for product loading)
 - Auth-gated UX flows for favorites and assistant
+- Admin-only poster QR analytics dashboard at `/admin/qr-analytics`

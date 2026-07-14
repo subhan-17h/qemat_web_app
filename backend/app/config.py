@@ -21,10 +21,15 @@ class Settings(BaseSettings):
     # Server
     host: str = "0.0.0.0"
     port: int = 8000
-    cors_origins: str = "http://localhost:3000,https://qemat.com"
+    cors_origins: str = "http://localhost:3000,https://qemat.pk"
 
     # Database
     database_url: Optional[str] = None
+
+    # QR redirect analytics
+    qr_analytics_admin_emails: str = ""
+    qr_analytics_secret: Optional[str] = None
+    qr_analytics_write_timeout_seconds: float = 0.5
 
     # Caching (seconds)
     bundle_cache_ttl: int = 3600  # 1 hour
@@ -33,6 +38,14 @@ class Settings(BaseSettings):
     @property
     def cors_origins_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+
+    @property
+    def qr_analytics_admin_emails_list(self) -> list[str]:
+        return [email.strip().lower() for email in self.qr_analytics_admin_emails.split(",") if email.strip()]
+
+    @property
+    def qr_analytics_hmac_secret(self) -> str:
+        return self.qr_analytics_secret or f"{self.firebase_project_id}:qr-analytics"
 
     class Config:
         env_file = ".env"
